@@ -41,18 +41,18 @@ export function DashboardClient({ space, currentFolder, initialFolders, initialF
 
   usePusher({
     spaceId: space.id,
-    onFileUploaded: (file) => {
+    onFileUploaded: (file: FileJSON) => {
       if (file.folderId === currentFolder?.id) {
         setFiles(prev => [file, ...prev]);
       }
     },
-    onFileDeleted: (id) => setFiles(prev => prev.filter(f => f.id !== id)),
-    onFolderCreated: (folder) => {
+    onFileDeleted: (id: string) => setFiles(prev => prev.filter(f => f.id !== id)),
+    onFolderCreated: (folder: FolderJSON) => {
       if (folder.parentId === currentFolder?.id) {
         setFolders(prev => [...prev, folder]);
       }
     },
-    onFolderDeleted: (id) => setFolders(prev => prev.filter(f => f.id !== id)),
+    onFolderDeleted: (id: string) => setFolders(prev => prev.filter(f => f.id !== id)),
   });
 
   const createFolder = async () => {
