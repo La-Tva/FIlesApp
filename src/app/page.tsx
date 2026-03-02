@@ -1,208 +1,167 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Zap, Monitor, Smartphone, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-}
+export default function HomePage() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
 
-function ParticleCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    const particles: Particle[] = [];
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    // PC icon center & phone icon center
-    const getPC = () => ({ x: canvas.width * 0.28, y: canvas.height * 0.5 });
-    const getPhone = () => ({ x: canvas.width * 0.72, y: canvas.height * 0.5 });
-
-    const spawnParticle = () => {
-      const from = Math.random() > 0.5 ? getPC() : getPhone();
-      const to = from.x < canvas.width / 2 ? getPhone() : getPC();
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const life = 90 + Math.random() * 60;
-      particles.push({
-        x: from.x + (Math.random() - 0.5) * 20,
-        y: from.y + (Math.random() - 0.5) * 20,
-        vx: dx / life,
-        vy: dy / life + (Math.random() - 0.5) * 0.5,
-        life,
-        maxLife: life,
-        size: 1.5 + Math.random() * 2,
-      });
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (Math.random() < 0.4) spawnParticle();
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        const progress = 1 - p.life / p.maxLife;
-        const alpha = Math.sin(progress * Math.PI) * 0.8;
-
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-        gradient.addColorStop(0, `rgba(167, 139, 250, ${alpha})`);  // violet-400
-        gradient.addColorStop(1, `rgba(139, 92, 246, 0)`);           // violet-500
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life--;
-        if (p.life <= 0) particles.splice(i, 1);
+    try {
+      if (mode === "register") {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+        });
+        const data = await res.json();
+        if (!res.ok) { toast.error(data.error); setLoading(false); return; }
+        toast.success("Account created! Signing you in…");
       }
 
-      animId = requestAnimationFrame(draw);
-    };
+      const result = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
 
-    draw();
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />;
-}
-
-export default function LandingPage() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    await signIn("resend", { email, redirect: false });
-    setSent(true);
-    setLoading(false);
+      if (result?.error) {
+        toast.error("Invalid email or password");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 overflow-hidden flex items-center justify-center">
-      {/* Ambient glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(109,40,217,0.15)_0%,transparent_70%)] pointer-events-none" />
-
-      <ParticleCanvas />
-
-      {/* Icon pair */}
-      <div className="absolute inset-0 flex items-center justify-between px-[12%] pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 0.15, x: 0 }}
-          transition={{ duration: 1 }}
-          className="flex flex-col items-center gap-3 text-violet-300"
-        >
-          <Monitor className="w-28 h-28" strokeWidth={0.8} />
-          <span className="text-sm font-medium tracking-widest uppercase">Desktop</span>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 0.15, x: 0 }}
-          transition={{ duration: 1 }}
-          className="flex flex-col items-center gap-3 text-violet-300"
-        >
-          <Smartphone className="w-28 h-28" strokeWidth={0.8} />
-          <span className="text-sm font-medium tracking-widest uppercase">Mobile</span>
-        </motion.div>
+    <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Center card */}
-      <motion.div
-        initial={{ opacity: 0, y: 32, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-10 max-w-md w-full mx-4 text-center shadow-2xl"
-      >
+      <div className="relative w-full max-w-md">
         {/* Logo */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
-          className="w-16 h-16 bg-violet-500/20 border border-violet-400/30 rounded-2xl flex items-center justify-center mx-auto mb-6"
-        >
-          <Zap className="w-8 h-8 text-violet-400" />
-        </motion.div>
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-500/20 border border-violet-400/30 mb-4">
+            <svg className="w-8 h-8 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">SwiftDrop</h1>
+          <p className="text-slate-400 mt-1 text-sm">Ephemeral file sharing, instant.</p>
+        </div>
 
-        <h1 className="text-4xl font-black text-white tracking-tight mb-2">SwiftDrop</h1>
-        <p className="text-slate-400 mb-8 leading-relaxed">
-          Your ephemeral digital bridge.<br />
-          Share files between devices in seconds — no accounts, no clutter.
-        </p>
+        {/* Card */}
+        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+          {/* Tab toggle */}
+          <div className="flex bg-white/5 rounded-2xl p-1 mb-7">
+            {(["login", "register"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  mode === m ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {m === "login" ? "Sign In" : "Create Account"}
+              </button>
+            ))}
+          </div>
 
-        {sent ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-3 py-4"
-          >
-            <div className="w-12 h-12 bg-green-500/20 border border-green-400/30 rounded-2xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <AnimatePresence mode="wait">
+              {mode === "register" && (
+                <motion.div
+                  key="name"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Full name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-400/60 focus:bg-white/8 transition-colors"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-400/60 focus:bg-white/8 transition-colors"
+                />
+              </div>
             </div>
-            <p className="text-white font-medium">Check your inbox!</p>
-            <p className="text-slate-400 text-sm">We sent a magic link to <strong className="text-white">{email}</strong></p>
-          </motion.div>
-        ) : (
-          <form onSubmit={handleSignIn} className="space-y-3">
-            <input
-              type="email"
-              required
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-500 outline-none focus:border-violet-400/50 focus:bg-white/10 transition-all text-sm"
-            />
+
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-slate-600 outline-none focus:border-violet-400/60 focus:bg-white/8 transition-colors"
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-medium rounded-xl py-3 mt-2 transition-all duration-200 shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <>Get started <ArrowRight className="w-4 h-4" /></>
+                <>
+                  {mode === "login" ? "Sign In" : "Create Account"}
+                  <ArrowRight className="w-4 h-4" />
+                </>
               )}
             </button>
           </form>
-        )}
-
-        <div className="flex items-center justify-center gap-6 mt-8 text-xs text-slate-600">
-          <span>⚡️ Instant sync</span>
-          <span>🔒 Expires in 24h</span>
-          <span>📱 QR pairing</span>
         </div>
-      </motion.div>
-    </div>
+
+        <p className="text-center text-xs text-slate-600 mt-6">
+          Files auto-delete after 24 hours · No tracking
+        </p>
+      </div>
+    </main>
   );
 }

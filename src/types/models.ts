@@ -8,6 +8,7 @@ export interface User {
     email: string;
     emailVerified?: Date | null;
     image?: string | null;
+    passwordHash?: string;
     spaceIds: ObjectId[];
     createdAt: Date;
 }

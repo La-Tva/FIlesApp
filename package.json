@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
+    "@types/bcryptjs": "^2.4.6",
     "@types/qrcode.react": "^1.0.5",
     "@vercel/blob": "^2.3.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.4",
