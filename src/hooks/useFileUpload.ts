@@ -23,44 +23,79 @@ export function useFileUpload({ spaceId, folderId }: UseFileUploadOptions) {
             setUploadingFiles((prev) => [...prev, { id: tempId, name: file.name, progress: 0 }]);
 
             try {
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("spaceId", spaceId);
-                if (folderId) formData.append("folderId", folderId);
+                // 1. Get presigned URL
+                const presignRes = await fetch("/api/upload/presign", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        filename: file.name,
+                        contentType: file.type,
+                        spaceId,
+                    }),
+                });
 
-                // Simulate progress since fetch doesn't support upload progress
-                const progressInterval = setInterval(() => {
-                    setUploadingFiles((prev) =>
-                        prev.map((f) =>
-                            f.id === tempId ? { ...f, progress: Math.min(f.progress + 15, 85) } : f
-                        )
-                    );
-                }, 300);
+                if (!presignRes.ok) throw new Error("Failed to get upload URL");
+                const { uploadUrl, key } = await presignRes.json();
 
-                const res = await fetch("/api/upload", { method: "POST", body: formData });
-                clearInterval(progressInterval);
+                // 2. Upload directly to S3/R2 with XHR to track progress
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("PUT", uploadUrl);
+                    xhr.setRequestHeader("Content-Type", file.type);
 
-                if (!res.ok) throw new Error("Upload failed");
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const progress = Math.round((e.loaded / e.total) * 100);
+                            setUploadingFiles((prev) =>
+                                prev.map((f) => (f.id === tempId ? { ...f, progress } : f))
+                            );
+                        }
+                    };
 
-                setUploadingFiles((prev) =>
-                    prev.map((f) => (f.id === tempId ? { ...f, progress: 100 } : f))
-                );
+                    xhr.onload = () => (xhr.status === 200 ? resolve(null) : reject(new Error("Upload failed")));
+                    xhr.onerror = () => reject(new Error("Network error"));
+                    xhr.send(file);
+                });
 
-                toast.success(`${file.name} uploaded`);
+                // 3. Confirm upload in DB
+                const confirmRes = await fetch("/api/upload/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        key,
+                        spaceId,
+                        folderId,
+                    }),
+                });
+
+                if (!confirmRes.ok) throw new Error("Failed to confirm upload");
+
+                toast.success(`${file.name} uploaded successfully`);
             } catch (err) {
                 console.error(err);
                 toast.error(`Failed to upload ${file.name}`);
             } finally {
                 setTimeout(() => {
                     setUploadingFiles((prev) => prev.filter((f) => f.id !== tempId));
-                }, 500);
+                }, 1000);
             }
         },
         [spaceId, folderId]
     );
 
     const uploadFiles = useCallback(
-        (files: File[]) => files.forEach((f) => uploadFile(f)),
+        (files: File[]) => {
+            files.forEach((f) => {
+                if (f.size > 5 * 1024 * 1024 * 1024) {
+                    toast.error(`${f.name} exceeds 5GB limit`);
+                    return;
+                }
+                uploadFile(f);
+            });
+        },
         [uploadFile]
     );
 
