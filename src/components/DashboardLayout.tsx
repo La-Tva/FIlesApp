@@ -1,91 +1,315 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, File as FileIcon } from "lucide-react";
+import { useCallback, useState, useEffect } from "react";
+import { 
+    Upload, 
+    X, 
+    File as FileIcon, 
+    Loader2, 
+    CheckCircle2, 
+    LayoutGrid, 
+    Star, 
+    Clock, 
+    Settings, 
+    ChevronRight, 
+    LogOut,
+    ChevronDown 
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { RENDER_BACKEND_URL, SOCKET_URL } from "@/lib/constants";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { signOut } from "next-auth/react";
+import { io } from "socket.io-client";
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+interface UploadingFile {
+    id: string;
+    name: string;
+    progress: number;
+    status: 'uploading' | 'completed' | 'error';
+}
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFiles(prev => [...prev, ...acceptedFiles]);
-    setIsDragging(false);
-    toast.success(`${acceptedFiles.length} fichiers ajoutés à la file d'attente`);
-    // Here we will eventually trigger the upload to Render
-  }, []);
+export function DashboardLayout({ 
+    children, 
+    spaceId = null,
+    folderId = null,
+    userId,
+    userName = "User",
+    userEmail = ""
+}: { 
+    children: React.ReactNode, 
+    spaceId?: string | null,
+    folderId?: string | null,
+    userId: string,
+    userName?: string,
+    userEmail?: string
+}) {
+    const [uploads, setUploads] = useState<UploadingFile[]>([]);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const router = useRouter();
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    noClick: true, // Omnipresent means it doesn't block other clicks unless dragging
-    onDragEnter: () => setIsDragging(true),
-    onDragLeave: () => setIsDragging(false),
-  });
+    useEffect(() => {
+        const socket = io(SOCKET_URL);
+        socket.on('file_uploaded', (data) => {
+            if (data.spaceId === spaceId) {
+                router.refresh();
+            }
+        });
+        return () => { socket.disconnect(); };
+    }, [spaceId, router]);
 
-  return (
-    <div {...getRootProps()} className="min-h-screen premium-gradient relative overflow-hidden">
-      <input {...getInputProps()} />
-      
-      {/* Background Orbs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-500/10 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+        if (!spaceId) {
+            toast.error("Veuillez entrer dans un espace pour uploader des fichiers.");
+            return;
+        }
 
-      {/* Main Content */}
-      <main className="relative z-10 p-6 md:p-12 max-w-7xl mx-auto">
-        {children}
-      </main>
+        const newUploads = acceptedFiles.map(file => ({
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            progress: 0,
+            status: 'uploading' as const
+        }));
 
-      {/* Omnipresent Dropzone Overlay */}
-      <AnimatePresence>
-        {(isDragging || isDragActive) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-8"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-2xl aspect-video border-2 border-dashed border-violet-500/50 rounded-3xl glass flex flex-col items-center justify-center gap-6 text-center"
-            >
-              <div className="w-20 h-20 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400">
-                <Upload className="w-10 h-10 animate-bounce" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold gradient-text">Relâchez pour partager</h2>
-                <p className="text-slate-400 mt-2">SwiftDrop envoie vos fichiers instantanément vers vos espaces.</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        setUploads(prev => [...prev, ...newUploads]);
 
-      {/* Upload Progress / Queue Toast (Simplified for now) */}
-      {files.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-40 w-80 glass rounded-2xl p-4 shadow-2xl border border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <FileIcon className="w-4 h-4 text-violet-400" />
-              Envoi en cours ({files.length})
-            </h4>
-            <button onClick={() => setFiles([])} className="text-slate-500 hover:text-white transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-2 max-h-40 overflow-y-auto no-scrollbar">
-            {files.map((f, i) => (
-              <div key={i} className="flex items-center justify-between text-xs p-2 rounded-lg bg-white/5">
-                <span className="truncate pr-4">{f.name}</span>
-                <span className="text-violet-400 font-medium">85%</span>
-              </div>
-            ))}
-          </div>
+        for (let i = 0; i < acceptedFiles.length; i++) {
+            const file = acceptedFiles[i];
+            const currentUpload = newUploads[i];
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('spaceId', spaceId);
+            formData.append('ownerId', userId);
+            formData.append('folderId', folderId || 'null');
+
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (res.ok) {
+                    setUploads(prev => prev.map(u => u.id === currentUpload.id ? { ...u, status: 'completed', progress: 100 } : u));
+                    toast.success(`${file.name} uploadé !`);
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                setUploads(prev => prev.map(u => u.id === currentUpload.id ? { ...u, status: 'error' } : u));
+                toast.error(`Erreur pour ${file.name}`);
+            }
+        }
+    }, [spaceId, userId, folderId]);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+        onDrop,
+        noClick: true,
+        noKeyboard: true
+    });
+
+    const handleLogout = async () => {
+        await signOut({ callbackUrl: "/login" });
+    };
+
+    const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+    return (
+        <div {...getRootProps()} className="min-h-screen bg-[#0A0A0B] text-white selection:bg-violet-500/30 selection:text-white font-sans relative flex overflow-hidden">
+            <input {...getInputProps()} />
+            
+            {/* Background Animations */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-violet-600/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse delay-1000" />
+            </div>
+
+            {/* Sidebar */}
+            <aside className="w-72 bg-[#0D0D0F]/80 backdrop-blur-xl border-r border-white/5 flex flex-col relative z-20 hidden lg:flex">
+                <div className="p-8">
+                    <Link href="/main" className="flex items-center gap-3 group">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform">
+                            <Upload className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-xl font-black font-outfit tracking-tighter uppercase whitespace-nowrap">SwiftDrop <span className="text-violet-400">v2</span></span>
+                    </Link>
+                </div>
+
+                <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 px-4 mb-4">Menu Principal</p>
+                    
+                    {[
+                        { icon: LayoutGrid, label: 'Dashboard', href: '/main' },
+                        { icon: Star, label: 'Favoris', href: '/main' },
+                        { icon: Clock, label: 'Récents', href: '/main' },
+                    ].map((item, i) => (
+                        <Link 
+                            key={i} 
+                            href={item.href}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all group ${item.label === 'Dashboard' ? 'bg-white/5 text-violet-400 border border-white/5' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <item.icon className={`w-5 h-5 ${item.label === 'Dashboard' ? '' : 'group-hover:text-violet-400 transition-colors'}`} />
+                            <span className="font-bold text-sm tracking-tight">{item.label}</span>
+                        </Link>
+                    ))}
+                </nav>
+
+                <div className="p-4 border-t border-white/5">
+                    <Link href="/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/5">
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 font-black text-xs uppercase border border-violet-500/20 group-hover:scale-110 transition-transform">
+                            {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-white truncate uppercase tracking-tighter">{userName}</p>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest truncate">{userEmail || 'Premium User'}</p>
+                        </div>
+                        <Settings className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors" />
+                    </Link>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+                {/* Global Header */}
+                <header className="h-24 px-8 border-b border-white/5 flex items-center justify-between relative z-10 bg-[#0A0A0B]/50 backdrop-blur-md">
+                    <div className="flex items-center gap-4 lg:hidden">
+                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+                            <Upload className="w-4 h-4 text-white" />
+                         </div>
+                    </div>
+
+                    <div className="hidden md:flex items-center gap-1 overflow-hidden ml-4 lg:ml-0">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-50">SwiftDrop</p>
+                         <ChevronRight className="w-3 h-3 text-slate-800" />
+                         <p className="text-[10px] font-black uppercase tracking-widest text-violet-400">Dashboard</p>
+                    </div>
+
+                    <div className="flex items-center gap-4 relative">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="flex items-center gap-3 pl-1 pr-4 py-1.5 rounded-2xl bg-white/5 border border-white/10 hover:border-violet-500/30 transition-all group"
+                            >
+                                 <div className="w-8 h-8 rounded-xl bg-violet-400 flex items-center justify-center font-black text-[10px] text-black">
+                                    {initials.substring(0, 1)}
+                                 </div>
+                                 <span className="text-xs font-bold text-slate-400 group-hover:text-white transition-colors">{userName}</span>
+                                 <ChevronDown className={`w-4 h-4 text-slate-600 group-hover:text-white transition-all ${showUserMenu ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* User Dropdown */}
+                            <AnimatePresence>
+                                {showUserMenu && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        className="absolute right-0 top-14 w-56 bg-[#111113] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                                    >
+                                        <div className="p-4 border-b border-white/5">
+                                            <p className="text-xs font-bold text-white">{userName}</p>
+                                            <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
+                                        </div>
+                                        <div className="p-2">
+                                            <Link 
+                                                href="/profile"
+                                                onClick={() => setShowUserMenu(false)}
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-all text-xs font-bold"
+                                            >
+                                                <Settings className="w-4 h-4" /> Paramètres
+                                            </Link>
+                                            <button 
+                                                onClick={handleLogout}
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-all text-xs font-bold w-full"
+                                            >
+                                                <LogOut className="w-4 h-4" /> Se déconnecter
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-y-auto custom-scrollbar p-8">
+                    <div className="max-w-7xl mx-auto space-y-12 pb-20">
+                        {children}
+                    </div>
+                </main>
+            </div>
+
+            {/* Drag Overlay */}
+            <AnimatePresence>
+                {isDragActive && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-violet-600/10 backdrop-blur-md flex items-center justify-center p-12 border-4 border-dashed border-violet-500/40 m-6 rounded-[3rem] pointer-events-none"
+                    >
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="w-24 h-24 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 animate-bounce">
+                                <Upload className="w-12 h-12" />
+                            </div>
+                            <h2 className="text-4xl font-black font-outfit uppercase tracking-tighter text-white drop-shadow-2xl">Lâchez pour uploader</h2>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Upload Queue */}
+            <div className="fixed bottom-8 right-8 z-[90] flex flex-col gap-3 w-80">
+                <AnimatePresence>
+                    {uploads.map((upload) => (
+                        <motion.div 
+                            key={upload.id}
+                            initial={{ x: 100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="glass p-4 rounded-2xl border border-white/10 flex items-center gap-4 shadow-2xl"
+                        >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                upload.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                                upload.status === 'error' ? 'bg-red-500/10 text-red-400' :
+                                'bg-violet-500/10 text-violet-400'
+                            }`}>
+                                {upload.status === 'uploading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 
+                                 upload.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> :
+                                 <X className="w-5 h-5" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold truncate pr-4">{upload.name}</p>
+                                <div className="h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                                    <motion.div 
+                                        className={`h-full ${upload.status === 'error' ? 'bg-red-500' : 'bg-violet-500'}`}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${upload.progress}%` }}
+                                    />
+                                </div>
+                            </div>
+                            {upload.status !== 'uploading' && (
+                                <button 
+                                    onClick={() => setUploads(prev => prev.filter(u => u.id !== upload.id))}
+                                    className="p-1 hover:bg-white/5 rounded-md"
+                                >
+                                    <X className="w-3 h-3 text-slate-500" />
+                                </button>
+                            )}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
+            {/* Click outside to close user menu */}
+            {showUserMenu && (
+                <div 
+                    className="fixed inset-0 z-[9]" 
+                    onClick={() => setShowUserMenu(false)} 
+                />
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

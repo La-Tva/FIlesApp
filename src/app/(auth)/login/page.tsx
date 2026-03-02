@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -106,9 +107,9 @@ export default function LoginPage() {
              <button className="w-full bg-white/5 border border-white/10 text-white py-3 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-3 text-sm">
                 <Github className="w-5 h-5" /> Continuer avec GitHub
              </button>
-             <p className="text-center text-xs text-slate-500">
-               Pas encore de compte ? <button className="text-violet-400 font-semibold hover:underline">S'inscrire</button>
-             </p>
+              <p className="text-center text-xs text-slate-500">
+                Pas encore de compte ? <Link href="/register" className="text-violet-400 font-semibold hover:underline">S'inscrire</Link>
+              </p>
           </div>
         </div>
       </motion.div>

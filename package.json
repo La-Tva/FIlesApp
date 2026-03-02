@@ -10,32 +10,37 @@
     "server": "node server/index.js"
   },
   "dependencies": {
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "mongodb": "^6.0.0",
-    "next-auth": "beta",
+    "bcryptjs": "^2.4.3",
+    "clsx": "latest",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "latest",
-    "clsx": "latest",
-    "tailwind-merge": "latest",
+    "mongodb": "^6.0.0",
+    "multer": "^1.4.4",
+    "multer-gridfs-storage": "^5.0.2",
+    "next": "latest",
+    "next-auth": "beta",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-dropzone": "latest",
     "socket.io": "^4.7.0",
     "socket.io-client": "^4.7.0",
-    "express": "^4.18.0",
-    "cors": "^2.8.5",
-    "bcryptjs": "^2.4.3",
-    "sonner": "latest"
+    "sonner": "latest",
+    "tailwind-merge": "latest"
   },
   "devDependencies": {
-    "typescript": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "tailwindcss": "latest",
-    "@tailwindcss/postcss": "latest",
-    "postcss": "latest",
     "autoprefixer": "latest",
     "eslint": "latest",
-    "eslint-config-next": "latest"
+    "eslint-config-next": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest"
   }
 }

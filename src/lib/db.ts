@@ -1,6 +1,6 @@
 import { MongoClient, Db } from "mongodb";
 
-const uri = process.env.DATABASE_URL!;
+const uri = process.env.DATABASE_URL || "mongodb://localhost:27017/unused";
 const options = {};
 
 let client: MongoClient;

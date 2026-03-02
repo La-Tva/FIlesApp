@@ -7,8 +7,9 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session) redirect("/login");
 
+  const userId = session.user?.id as string;
   return (
-    <DashboardLayout>
+    <DashboardLayout userId={userId}>
       <div className="max-w-3xl mx-auto space-y-10">
         <header className="flex items-center gap-6">
           <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-white text-3xl font-bold shadow-2xl shadow-violet-500/20">

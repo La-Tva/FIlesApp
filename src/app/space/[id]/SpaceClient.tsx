@@ -1,0 +1,284 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { Folder, File, ArrowLeft, Trash2, Plus, Download, Star, Upload, Edit3, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { CreateModal } from "@/components/CreateModal";
+import { RENDER_BACKEND_URL } from "@/lib/constants";
+import { toast } from "sonner";
+
+export function SpaceClient({ 
+    userId, 
+    spaceId, 
+    folderId,
+    name, 
+    folders, 
+    files 
+}: { 
+    userId: string, 
+    spaceId: string, 
+    folderId: string | null,
+    name: string, 
+    folders: any[], 
+    files: any[] 
+}) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
+
+    const handleFolderClick = (id: string) => {
+        router.push(`/space/${spaceId}?folderId=${id}`);
+    };
+
+    const handleToggleFavorite = async (id: string, type: 'file' | 'folder') => {
+        try {
+            await fetch(`${RENDER_BACKEND_URL}/api/favorites/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, type })
+            });
+            router.refresh();
+        } catch (err) {
+            toast.error("Erreur lors de la mise en favori");
+        }
+    };
+
+    const handleDelete = async (id: string, type: 'file' | 'folder') => {
+        if (!confirm("Supprimer cet élément ?")) return;
+        try {
+            await fetch(`${RENDER_BACKEND_URL}/api/items`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, type })
+            });
+            router.refresh();
+            toast.success("Supprimé");
+        } catch (err) {
+            toast.error("Erreur de suppression");
+        }
+    };
+
+    const handleRename = async (id: string, type: 'file' | 'folder', oldName: string) => {
+        const newName = prompt("Nouveau nom :", oldName);
+        if (!newName || newName === oldName) return;
+        try {
+            await fetch(`${RENDER_BACKEND_URL}/api/items/rename`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, type, newName })
+            });
+            router.refresh();
+        } catch (err) {
+            toast.error("Erreur de renommage");
+        }
+    };
+
+    const handleDownload = (fileId: string) => {
+        window.open(`${RENDER_BACKEND_URL}/api/download/${fileId}`, '_blank');
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = e.target.files;
+        if (!selectedFiles || selectedFiles.length === 0) return;
+
+        setUploading(true);
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('spaceId', spaceId);
+            formData.append('ownerId', userId);
+            formData.append('folderId', folderId || 'null');
+
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (res.ok) {
+                    toast.success(`${file.name} uploadé !`);
+                } else {
+                    toast.error(`Erreur pour ${file.name}`);
+                }
+            } catch (err) {
+                toast.error(`Erreur pour ${file.name}`);
+            }
+        }
+        setUploading(false);
+        router.refresh();
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    return (
+        <div className="flex flex-col gap-8">
+            {/* Hidden file input */}
+            <input 
+                ref={fileInputRef}
+                type="file" 
+                multiple 
+                className="hidden" 
+                onChange={handleFileUpload}
+            />
+
+            {/* Header Navigation */}
+            <nav className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Link href="/main" className="p-2 glass rounded-xl text-slate-400 hover:text-white transition-all">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold font-outfit uppercase tracking-tight">{name}</h1>
+                        <p className="text-[10px] text-violet-400 font-black uppercase tracking-widest mt-0.5">
+                            {folders.length + files.length} éléments
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-400 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all disabled:opacity-50"
+                    >
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {uploading ? "Upload..." : "Uploader"}
+                    </button>
+                    <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 glass glass-hover rounded-xl text-[10px] font-black uppercase tracking-widest text-violet-400 border border-white/5"
+                    >
+                        <Plus className="w-4 h-4" /> Dossier
+                    </button>
+                </div>
+            </nav>
+
+            {/* Space Explorer Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Folders */}
+                {folders.map((folder) => (
+                    <div 
+                        key={folder._id.toString()} 
+                        onClick={() => handleFolderClick(folder._id)}
+                        className="glass glass-hover p-4 rounded-2xl flex items-center gap-4 group cursor-pointer border border-white/5 relative"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+                            <Folder className={`w-5 h-5 ${folder.isFavorite ? 'fill-violet-400' : 'fill-violet-400/20'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold truncate group-hover:text-white transition-colors">{folder.name}</h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase">Dossier</p>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(folder._id, 'folder'); }}
+                                className={`p-1 ${folder.isFavorite ? 'text-amber-400' : 'text-slate-500'} hover:text-amber-400 transition-colors`}
+                            >
+                                <Star className={`w-3.5 h-3.5 ${folder.isFavorite ? 'fill-current' : ''}`} />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleRename(folder._id, 'folder', folder.name); }}
+                                className="p-1 text-slate-500 hover:text-white transition-colors"
+                                title="Renommer"
+                            >
+                                <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleDelete(folder._id, 'folder'); }}
+                                className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+                                title="Supprimer"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Files */}
+                {files.map((file) => (
+                    <div key={file._id.toString()} className="glass glass-hover p-4 rounded-2xl flex flex-col gap-4 group relative border border-white/5">
+                        <div className="flex items-start justify-between">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 group-hover:text-violet-400 transition-colors">
+                                <File className="w-5 h-5" />
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    onClick={() => handleToggleFavorite(file._id, 'file')}
+                                    className={`p-1.5 ${file.isFavorite ? 'text-amber-400' : 'text-slate-500'} hover:text-amber-400 transition-colors`}
+                                    title="Favori"
+                                >
+                                    <Star className={`w-4 h-4 ${file.isFavorite ? 'fill-current' : ''}`} />
+                                </button>
+                                <button 
+                                    onClick={() => handleDownload(file.storageId || file._id)}
+                                    className="p-1.5 text-slate-500 hover:text-violet-400 transition-colors"
+                                    title="Télécharger"
+                                >
+                                    <Download className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    onClick={() => handleRename(file._id, 'file', file.name)}
+                                    className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                                    title="Renommer"
+                                >
+                                    <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    onClick={() => handleDelete(file._id, 'file')}
+                                    className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                                    title="Supprimer"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold truncate group-hover:text-white transition-colors">{file.name}</h3>
+                            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-black opacity-60">
+                                {(file.size / (1024 * 1024)).toFixed(1)} MB • {file.type?.split('/')[1] || 'FILE'}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Empty State */}
+            {folders.length === 0 && files.length === 0 && (
+                <div className="glass rounded-[2.5rem] p-20 flex flex-col items-center justify-center gap-4 text-center border border-white/5">
+                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-slate-800">
+                        <Folder className="w-10 h-10" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white/90">Cet espace est vide</h2>
+                        <p className="text-sm text-slate-500 max-w-xs mx-auto mt-1">
+                            Utilisez le bouton &quot;Uploader&quot; pour ajouter des fichiers ou créez un dossier.
+                        </p>
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-5 py-3 bg-violet-500 hover:bg-violet-400 rounded-2xl text-sm font-bold text-white transition-all"
+                        >
+                            <Upload className="w-4 h-4" /> Uploader un fichier
+                        </button>
+                        <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-3 glass glass-hover rounded-2xl text-sm font-bold text-violet-400 border border-white/10"
+                        >
+                            <Plus className="w-4 h-4" /> Nouveau Dossier
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <CreateModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                type="folder" 
+                userId={userId} 
+                spaceId={spaceId} 
+                folderId={folderId}
+            />
+        </div>
+    );
+}
