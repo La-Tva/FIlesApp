@@ -12,27 +12,30 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://localhost:3001']
-  : undefined; // undefined = allow all
-
 app.use(cors({
-  origin: allowedOrigins || '*',
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
 
+// Health check for Render
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins || '*',
+    origin: true,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 const PORT = process.env.PORT || 4000;
-const MONGODB_URI = process.env.DATABASE_URL;
+const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('FATAL: DATABASE_URL env var is not set!');
+  process.exit(1);
+}
 
 const client = new MongoClient(MONGODB_URI);
 let db, bucket;
