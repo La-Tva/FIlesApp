@@ -25,7 +25,8 @@ export function DashboardClient({
     userSpaces, 
     recentFiles,
     stats,
-    userName 
+    userName,
+    initialFilter 
 }: { 
     userId: string, 
     userSpaces: any[], 
