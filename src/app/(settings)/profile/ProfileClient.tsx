@@ -4,12 +4,22 @@ import { User, Shield, HardDrive, Smartphone, ChevronRight } from "lucide-react"
 import { toast } from "sonner";
 
 export function ProfileClient({ items }: { items: any[] }) {
+  const handleClick = (item: any) => {
+    switch (item.id) {
+      case 'personal': toast.info("Modification du profil bientôt disponible."); break;
+      case 'security': toast.info("Paramètres de sécurité bientôt disponibles."); break;
+      case 'storage': toast.info("Détails du stockage par appareil bientôt disponibles."); break;
+      case 'subscription': toast.info("Gestion de l'abonnement bientôt disponible."); break;
+      default: toast.info(`La section "${item.label}" sera bientôt disponible.`);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
       {items.map((item, i) => (
         <div 
             key={i} 
-            onClick={() => toast.info(`La section "${item.label}" sera bientôt disponible.`)}
+            onClick={() => handleClick(item)}
             className="glass glass-hover p-6 rounded-3xl flex items-center justify-between group cursor-pointer border border-white/5"
         >
           <div className="flex items-center gap-5">

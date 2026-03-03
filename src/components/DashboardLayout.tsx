@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { RENDER_BACKEND_URL, SOCKET_URL } from "@/lib/constants";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { io } from "socket.io-client";
@@ -49,6 +49,8 @@ export function DashboardLayout({
     const [uploads, setUploads] = useState<UploadingFile[]>([]);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const currentFilter = searchParams.get('filter') || 'all';
 
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket'] });
@@ -156,16 +158,21 @@ export function DashboardLayout({
                         { icon: LayoutGrid, label: 'Dashboard', href: '/main' },
                         { icon: Star, label: 'Favoris', href: '/main?filter=favorites' },
                         { icon: Clock, label: 'Récents', href: '/main?filter=recents' },
-                    ].map((item, i) => (
-                        <Link 
-                            key={i} 
-                            href={item.href}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all group ${item.label === 'Dashboard' ? 'bg-white/5 text-violet-400 border border-white/5' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <item.icon className={`w-5 h-5 ${item.label === 'Dashboard' ? '' : 'group-hover:text-violet-400 transition-colors'}`} />
-                            <span className="font-bold text-sm tracking-tight">{item.label}</span>
-                        </Link>
-                    ))}
+                    ].map((item, i) => {
+                        const isActive = (item.label === 'Dashboard' && currentFilter === 'all') || 
+                                         (item.label === 'Favoris' && currentFilter === 'favorites') || 
+                                         (item.label === 'Récents' && currentFilter === 'recents');
+                        return (
+                            <Link 
+                                key={i} 
+                                href={item.href}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all group ${isActive ? 'bg-white/5 text-violet-400 border border-white/5' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <item.icon className={`w-5 h-5 ${isActive ? '' : 'group-hover:text-violet-400 transition-colors'}`} />
+                                <span className="font-bold text-sm tracking-tight">{item.label}</span>
+                            </Link>
+                        );
+                    })}
                 </nav>
 
                 <div className="p-4 border-t border-white/5">
@@ -187,9 +194,9 @@ export function DashboardLayout({
                 {/* Global Header */}
                 <header className="h-20 lg:h-24 px-4 lg:px-8 border-b border-white/5 flex items-center justify-between relative z-10 bg-[#0A0A0B]/50 backdrop-blur-md">
                     <div className="flex items-center gap-4 lg:hidden">
-                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+                         <Link href="/main" className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
                             <Upload className="w-4 h-4 text-white" />
-                         </div>
+                         </Link>
                     </div>
 
                     <div className="hidden md:flex items-center gap-1 overflow-hidden ml-4 lg:ml-0">

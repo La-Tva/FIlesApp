@@ -96,19 +96,25 @@ export async function getDashboardStats(userId: string) {
         };
     }
 
-    const [userSpacesCount, sharedSpacesCount, favoriteFilesCount, favoriteFoldersCount] = await Promise.all([
+    const [userSpacesCount, sharedSpacesCount, favoriteFilesCount, favoriteFoldersCount, totalSizeResult] = await Promise.all([
         spaces.countDocuments({ ownerId: new ObjectId(userId) }),
         spaces.countDocuments({ sharedWith: userId }),
         files.countDocuments({ ownerId: new ObjectId(userId), isFavorite: true }),
-        folders.countDocuments({ ownerId: new ObjectId(userId), isFavorite: true })
+        folders.countDocuments({ ownerId: new ObjectId(userId), isFavorite: true }),
+        files.aggregate([
+            { $match: { ownerId: new ObjectId(userId) } },
+            { $group: { _id: null, totalSize: { $sum: "$size" } } }
+        ]).toArray()
     ]);
 
+    const storageUsed = totalSizeResult[0]?.totalSize || 0;
     const globalSpacesCount = await spaces.countDocuments({ isGlobal: true });
 
     return {
         spacesTotal: userSpacesCount + globalSpacesCount,
         sharedTotal: sharedSpacesCount,
-        favoritesTotal: favoriteFilesCount + favoriteFoldersCount
+        favoritesTotal: favoriteFilesCount + favoriteFoldersCount,
+        storageUsed
     };
 }
 

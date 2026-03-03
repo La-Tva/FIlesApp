@@ -6,6 +6,9 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "SwiftDrop | Premium File Sharing",
   description: "Ultra-fast, secure file sharing with real-time sync.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

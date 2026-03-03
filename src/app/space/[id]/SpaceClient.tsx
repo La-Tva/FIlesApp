@@ -68,8 +68,19 @@ export function SpaceClient({
     };
 
     const handleRename = async (id: string, type: 'file' | 'folder', oldName: string) => {
-        const newName = prompt("Nouveau nom :", oldName);
+        let newName = prompt("Nouveau nom :", oldName);
         if (!newName || newName === oldName) return;
+
+        if (type === 'file') {
+            const lastDotIndex = oldName.lastIndexOf('.');
+            if (lastDotIndex !== -1) {
+                const extension = oldName.substring(lastDotIndex);
+                if (!newName.toLowerCase().endsWith(extension.toLowerCase())) {
+                    newName += extension;
+                }
+            }
+        }
+
         try {
             await fetch(`${RENDER_BACKEND_URL}/api/items/rename`, {
                 method: 'PATCH',

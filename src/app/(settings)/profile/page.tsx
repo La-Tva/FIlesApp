@@ -11,10 +11,10 @@ export default async function ProfilePage() {
   if (!session) redirect("/login");
 
   const userId = session.user?.id as string;
-  const stats = await getDashboardStats(userId);
+  const stats = await getDashboardStats(userId) as any;
   
-  // Calculate approximate storage (mocking based on file count for now, but 2TB is the 'limit')
-  const storageUsed = Math.min((stats.spacesTotal * 12.5) + (stats.sharedTotal * 5.2), 2000); // Mocked GB
+  // Storage in GB
+  const storageUsedGB = (stats.storageUsed || 0) / (1024 * 1024 * 1024);
   
   return (
     <DashboardLayout userId={userId}>
@@ -30,10 +30,10 @@ export default async function ProfilePage() {
         </header>
 
         <ProfileClient items={[
-            { label: "Informations Personnelles", description: `${session.user?.name || 'Utilisateur'} • ${session.user?.email}`, icon: User },
-            { label: "Sécurité & Mot de Passe", description: "Authentification à deux facteurs active", icon: Shield },
-            { label: "Stockage Appareils", description: `${storageUsed.toFixed(1)} GB utilisés sur 2 TB`, icon: Smartphone },
-            { label: "Abonnement SwiftDrop", description: "Version Premium • Renouvellement annuel", icon: HardDrive },
+            { id: "personal", label: "Informations Personnelles", description: `${session.user?.name || 'Utilisateur'} • ${session.user?.email}`, icon: User },
+            { id: "security", label: "Sécurité & Mot de Passe", description: "Authentification à deux facteurs active", icon: Shield },
+            { id: "storage", label: "Stockage Appareils", description: `${storageUsedGB.toFixed(2)} GB utilisés sur 2 TB`, icon: Smartphone },
+            { id: "subscription", label: "Abonnement SwiftDrop", description: "Version Premium • Cloud 2 TB", icon: HardDrive },
         ]} />
 
         <LogoutButton />
