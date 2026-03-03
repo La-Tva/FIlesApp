@@ -150,6 +150,26 @@ export function DashboardClient({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filterType === 'favorites' ? (
+                filteredRecent.filter(f => f.isFavorite).length > 0 ? filteredRecent.filter(f => f.isFavorite).map((file) => (
+                    <div 
+                        key={file._id.toString()} 
+                        onClick={() => router.push(`/space/${file.spaceId}`)}
+                        className="glass glass-hover p-5 rounded-3xl flex items-center gap-4 group border border-white/5 cursor-pointer"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-violet-400/10 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+                            <Star className="w-5 h-5 fill-current" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold truncate group-hover:text-violet-400 transition-colors">{file.name}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Favori</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-700 opacity-0 group-hover:opacity-100 transition-all" />
+                    </div>
+                )) : (
+                    <div className="col-span-2 py-10 text-center">
+                        <Star className="w-10 h-10 text-slate-700 mx-auto mb-2" />
+                        <p className="text-slate-400 font-bold">Aucun favori</p>
+                    </div>
                 )
             ) : filterType === 'recents' ? (
                 filteredRecent.length > 0 ? filteredRecent.map((file) => (

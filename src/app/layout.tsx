@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "SwiftDrop | Premium File Sharing",
@@ -13,8 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark">
-      <body className="antialiased overflow-x-hidden">
-        {children}
+      <body className="antialiased overflow-x-hidden bg-[#0A0A0B]">
+        <Providers>
+          {children}
+          <Toaster position="top-center" richColors />
+        </Providers>
       </body>
     </html>
   );
