@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { User, Shield, HardDrive, Smartphone, LogOut, ChevronRight } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { getDashboardStats } from "@/lib/services";
 import { ProfileClient } from "./ProfileClient";
@@ -30,10 +29,10 @@ export default async function ProfilePage() {
         </header>
 
         <ProfileClient items={[
-            { id: "personal", label: "Informations Personnelles", description: `${session.user?.name || 'Utilisateur'} • ${session.user?.email}`, icon: User },
-            { id: "security", label: "Sécurité & Mot de Passe", description: "Authentification à deux facteurs active", icon: Shield },
-            { id: "storage", label: "Stockage Appareils", description: `${storageUsedGB.toFixed(2)} GB utilisés sur 2 TB`, icon: Smartphone },
-            { id: "subscription", label: "Abonnement SwiftDrop", description: "Version Premium • Cloud 2 TB", icon: HardDrive },
+            { id: "personal", label: "Informations Personnelles", description: `${session.user?.name || 'Utilisateur'} • ${session.user?.email}`, iconName: "user" },
+            { id: "security", label: "Sécurité & Mot de Passe", description: "Authentification à deux facteurs active", iconName: "shield" },
+            { id: "storage", label: "Stockage Appareils", description: `${storageUsedGB.toFixed(2)} GB utilisés sur 2 TB`, iconName: "smartphone" },
+            { id: "subscription", label: "Abonnement SwiftDrop", description: "Version Premium • Cloud 2 TB", iconName: "harddrive" },
         ]} />
 
         <LogoutButton />
