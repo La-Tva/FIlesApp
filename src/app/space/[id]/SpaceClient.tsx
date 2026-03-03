@@ -231,7 +231,7 @@ export function SpaceClient({
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all absolute top-4 right-4 bg-white/80 backdrop-blur-sm p-1 rounded-full border border-[#F0F0F0]">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all absolute top-4 right-4 bg-white backdrop-blur-md shadow-md shadow-black/5 p-1 rounded-full border border-[#E5E5E5]">
                             <button 
                                 onClick={(e) => { e.stopPropagation(); handleToggleFavorite(folder._id, 'folder'); }}
                                 className={`p-2 rounded-full hover:bg-[#F5F5F5] ${folder.isFavorite ? 'text-black' : 'text-[#CCCCCC]'} transition-colors`}
@@ -287,7 +287,7 @@ export function SpaceClient({
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all absolute top-4 right-4 bg-white/80 backdrop-blur-sm p-1 rounded-full border border-[#F0F0F0]">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all absolute top-4 right-4 bg-white backdrop-blur-md shadow-md shadow-black/5 p-1 rounded-full border border-[#E5E5E5]">
                             <button 
                                 onClick={(e) => { e.stopPropagation(); handleToggleFavorite(file._id, 'file'); }}
                                 className={`p-2 rounded-full hover:bg-[#F5F5F5] ${file.isFavorite ? 'text-black' : 'text-[#CCCCCC]'} transition-colors`}
