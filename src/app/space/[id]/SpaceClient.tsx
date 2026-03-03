@@ -152,14 +152,14 @@ export function SpaceClient({
             />
 
             {/* Header Navigation */}
-            <nav className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-4 border-b border-[#F5F5F5]">
+            <nav className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-4 border-b border-white/5">
                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <Link href="/main" className="p-3 shrink-0 rounded-2xl bg-[#F5F5F5] text-black hover:bg-black hover:text-white transition-all">
-                        <ArrowLeft className="w-5 h-5" />
+                    <Link href="/main" className="p-3 shrink-0 rounded-2xl bg-white/5 border border-white/5 text-white hover:bg-white/10 hover:border-orange-500/50 transition-all">
+                        <InteractiveIconWrapper><ArrowLeft className="w-5 h-5" /></InteractiveIconWrapper>
                     </Link>
                     <div className="min-w-0">
-                        <h1 className="text-3xl font-serif italic tracking-tight truncate">{name}</h1>
-                        <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest mt-1">
+                        <h1 className="text-3xl font-serif italic tracking-tight truncate text-white">{name}</h1>
+                        <p className="text-[10px] text-[#A0A0A0] font-bold uppercase tracking-widest mt-1">
                             {folders.length + files.length} éléments dans cet espace
                         </p>
                     </div>
@@ -167,13 +167,13 @@ export function SpaceClient({
                 
                 <div className="flex-1 max-w-md hidden md:block">
                     <div className="relative group">
-                        <AnimatedSearchLoupe className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#999999]" />
+                        <AnimatedSearchLoupe className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A0A0A0]" />
                         <input 
                             type="text" 
                             placeholder="Rechercher..." 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#F9F9F9] border border-[#F0F0F0] rounded-2xl py-3 pl-12 pr-4 text-xs focus:outline-none focus:border-black focus:bg-white transition-all"
+                            className="w-full bg-[#0A0503]/50 backdrop-blur-md border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs text-white placeholder-[#A0A0A0] focus:outline-none focus:border-orange-500 focus:bg-[#0A0503] focus:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all hover:border-white/20"
                         />
                     </div>
                 </div>
@@ -182,16 +182,16 @@ export function SpaceClient({
                     <button 
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="group flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-black/10 disabled:opacity-50"
+                        className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full text-xs font-bold hover:scale-105 transition-all shadow-[0_4px_20px_rgba(249,115,22,0.3)] disabled:opacity-50"
                     >
-                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4 transition-transform group-hover:-translate-y-1" />}
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <InteractiveIconWrapper><Upload className="w-4 h-4 transition-transform group-hover:-translate-y-1" /></InteractiveIconWrapper>}
                         {uploading ? "..." : "Uploader"}
                     </button>
                     <button 
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-[#E5E5E5] text-black rounded-full text-xs font-bold hover:border-black transition-all"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-[#0A0503]/50 backdrop-blur-md border border-white/10 text-white rounded-full text-xs font-bold hover:border-orange-500/50 hover:bg-white/5 transition-all"
                     >
-                        <Plus className="w-4 h-4" /> Dossier
+                        <InteractiveIconWrapper><Plus className="w-4 h-4" /></InteractiveIconWrapper> Dossier
                     </button>
                 </div>
             </nav>
@@ -218,17 +218,17 @@ export function SpaceClient({
                         }}
                         whileHover={{ y: -4 }}
                         onClick={() => handleFolderClick(folder._id)}
-                        className="p-8 rounded-[2rem] border border-[#EEEEEE] bg-[#F5F5F5] hover:border-black transition-all cursor-pointer flex flex-col gap-2 group relative h-full"
+                        className="minimalist-card flex flex-col gap-2 group relative h-full p-8"
                     >
                         <FolderTab />
                         <div className="flex-1 min-w-0 relative z-10">
-                            <h3 className="text-base font-serif italic truncate group-hover:text-black transition-colors">{folder.name}</h3>
+                            <h3 className="text-base font-serif italic truncate text-white group-hover:text-orange-500 group-hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all">{folder.name}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                                <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest">Dossier</p>
+                                <p className="text-[10px] text-[#A0A0A0] font-bold uppercase tracking-widest">Dossier</p>
                                 {folder.isFavorite && (
                                     <>
-                                        <div className="w-1 h-1 rounded-full bg-[#E5E5E5]" />
-                                        <Star className="w-3 h-3 text-black fill-current" />
+                                        <div className="w-1 h-1 rounded-full bg-white/20" />
+                                        <Star className="w-3 h-3 text-orange-500 fill-orange-500 drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
                                     </>
                                 )}
                             </div>
@@ -240,7 +240,7 @@ export function SpaceClient({
                                     e.stopPropagation(); 
                                     setOpenDropdownId(openDropdownId === folder._id ? null : folder._id); 
                                 }}
-                                className={`p-2.5 rounded-full hover:bg-[#F5F5F5] transition-colors bg-white backdrop-blur-md shadow-md shadow-black/5 border border-[#E5E5E5] ${openDropdownId === folder._id ? 'opacity-100 bg-[#F5F5F5] text-black' : 'opacity-100 text-[#CCCCCC] hover:text-black'}`}
+                                className={`p-2.5 rounded-full hover:bg-white/10 transition-colors bg-[#0A0503]/50 backdrop-blur-xl border border-white/5 ${openDropdownId === folder._id ? 'opacity-100 bg-white/20 text-white' : 'opacity-100 text-[#A0A0A0] hover:text-white'}`}
                             >
                                 <InteractiveIconWrapper>
                                     <MoreHorizontal className="w-5 h-5" />
@@ -254,18 +254,18 @@ export function SpaceClient({
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
                                         transition={{ duration: 0.15 }}
-                                        className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/10 border border-[#E5E5E5] flex flex-col overflow-hidden py-1 z-50 text-left"
+                                        className="absolute right-0 top-full mt-2 w-48 bg-[#0A0503]/90 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_-10px_rgba(249,115,22,0.2)] border border-white/5 flex flex-col overflow-hidden py-1 z-50 text-left"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(folder._id, 'folder'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F5F5F5] transition-colors text-sm text-[#333333]">
-                                            <Star className={`w-4 h-4 ${folder.isFavorite ? 'fill-black' : ''}`} /> {folder.isFavorite ? 'Retirer' : 'Favori'}
+                                        <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(folder._id, 'folder'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 transition-colors text-sm text-[#A0A0A0] hover:text-white">
+                                            <InteractiveIconWrapper><Star className={`w-4 h-4 ${folder.isFavorite ? 'fill-orange-500 text-orange-500' : ''}`} /></InteractiveIconWrapper> {folder.isFavorite ? 'Retirer' : 'Favori'}
                                         </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleRename(folder._id, 'folder', folder.name); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F5F5F5] transition-colors text-sm text-[#333333]">
-                                            <Edit3 className="w-4 h-4" /> Renommer
+                                        <button onClick={(e) => { e.stopPropagation(); handleRename(folder._id, 'folder', folder.name); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 transition-colors text-sm text-[#A0A0A0] hover:text-white">
+                                            <InteractiveIconWrapper><Edit3 className="w-4 h-4" /></InteractiveIconWrapper> Renommer
                                         </button>
-                                        <div className="h-px w-full bg-[#EEEEEE] my-1" />
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(folder._id, 'folder'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 hover:text-red-500 transition-colors text-sm text-[#333333]">
-                                            <Trash2 className="w-4 h-4" /> Supprimer
+                                        <div className="h-px w-full bg-white/5 my-1" />
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(folder._id, 'folder'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 hover:text-red-400 transition-colors text-sm text-[#A0A0A0]">
+                                            <InteractiveIconWrapper><Trash2 className="w-4 h-4" /></InteractiveIconWrapper> Supprimer
                                         </button>
                                     </motion.div>
                                 )}
@@ -286,23 +286,23 @@ export function SpaceClient({
                         }}
                         whileHover={{ y: -4 }}
                         onClick={() => handleFileClick(file)}
-                        className="p-8 rounded-[2rem] border border-[#E5E5E5] bg-white hover:border-black transition-all cursor-pointer flex flex-col gap-2 group relative h-full"
+                        className="minimalist-card flex flex-col gap-2 group relative h-full p-8"
                     >
                         <FileCorner />
                         <div className="min-w-0 pr-8 relative z-10">
-                            <h3 className="text-base font-sans font-bold truncate group-hover:text-black transition-colors">{file.name}</h3>
+                            <h3 className="text-base font-sans font-bold truncate text-white group-hover:text-orange-500 group-hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all">{file.name}</h3>
                             <div className="flex items-center gap-2 mt-1">
-                                <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest">
+                                <p className="text-[10px] text-[#A0A0A0] font-bold uppercase tracking-widest">
                                     {(file.size / (1024 * 1024)).toFixed(1)} MB
                                 </p>
-                                <div className="w-1 h-1 rounded-full bg-[#E5E5E5]" />
-                                <p className="text-[10px] text-[#999999] font-bold uppercase tracking-widest">
+                                <div className="w-1 h-1 rounded-full bg-white/20" />
+                                <p className="text-[10px] text-[#A0A0A0] font-bold uppercase tracking-widest">
                                     {file.type?.split('/')[1] || 'FILE'}
                                 </p>
                                 {file.isFavorite && (
                                     <>
-                                        <div className="w-1 h-1 rounded-full bg-[#E5E5E5]" />
-                                        <Star className="w-3 h-3 text-black fill-current" />
+                                        <div className="w-1 h-1 rounded-full bg-white/20" />
+                                        <Star className="w-3 h-3 text-orange-500 fill-orange-500 drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
                                     </>
                                 )}
                             </div>
@@ -314,7 +314,7 @@ export function SpaceClient({
                                     e.stopPropagation(); 
                                     setOpenDropdownId(openDropdownId === file._id ? null : file._id); 
                                 }}
-                                className={`p-2.5 rounded-full hover:bg-[#F5F5F5] transition-colors bg-white backdrop-blur-md shadow-md shadow-black/5 border border-[#E5E5E5] ${openDropdownId === file._id ? 'opacity-100 bg-[#F5F5F5] text-black' : 'opacity-100 text-[#CCCCCC] hover:text-black'}`}
+                                className={`p-2.5 rounded-full hover:bg-white/10 transition-colors bg-[#0A0503]/50 backdrop-blur-xl border border-white/5 ${openDropdownId === file._id ? 'opacity-100 bg-white/20 text-white' : 'opacity-100 text-[#A0A0A0] hover:text-white'}`}
                             >
                                 <InteractiveIconWrapper>
                                     <MoreHorizontal className="w-5 h-5" />
@@ -328,21 +328,21 @@ export function SpaceClient({
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
                                         transition={{ duration: 0.15 }}
-                                        className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-black/10 border border-[#E5E5E5] flex flex-col overflow-hidden py-1 z-50 text-left"
+                                        className="absolute right-0 top-full mt-2 w-48 bg-[#0A0503]/90 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_-10px_rgba(249,115,22,0.2)] border border-white/5 flex flex-col overflow-hidden py-1 z-50 text-left"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(file._id, 'file'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F5F5F5] transition-colors text-sm text-[#333333]">
-                                            <Star className={`w-4 h-4 ${file.isFavorite ? 'fill-black' : ''}`} /> {file.isFavorite ? 'Retirer' : 'Favori'}
+                                        <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(file._id, 'file'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 transition-colors text-sm text-[#A0A0A0] hover:text-white">
+                                            <InteractiveIconWrapper><Star className={`w-4 h-4 ${file.isFavorite ? 'fill-orange-500 text-orange-500' : ''}`} /></InteractiveIconWrapper> {file.isFavorite ? 'Retirer' : 'Favori'}
                                         </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDownload(file._id); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F5F5F5] transition-colors text-sm text-[#333333]">
-                                            <Download className="w-4 h-4" /> Télécharger
+                                        <button onClick={(e) => { e.stopPropagation(); handleDownload(file._id); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 transition-colors text-sm text-[#A0A0A0] hover:text-white">
+                                            <InteractiveIconWrapper><Download className="w-4 h-4" /></InteractiveIconWrapper> Télécharger
                                         </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleRename(file._id, 'file', file.name); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F5F5F5] transition-colors text-sm text-[#333333]">
-                                            <Edit3 className="w-4 h-4" /> Renommer
+                                        <button onClick={(e) => { e.stopPropagation(); handleRename(file._id, 'file', file.name); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/10 transition-colors text-sm text-[#A0A0A0] hover:text-white">
+                                            <InteractiveIconWrapper><Edit3 className="w-4 h-4" /></InteractiveIconWrapper> Renommer
                                         </button>
-                                        <div className="h-px w-full bg-[#EEEEEE] my-1" />
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(file._id, 'file'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 hover:text-red-500 transition-colors text-sm text-[#333333]">
-                                            <Trash2 className="w-4 h-4" /> Supprimer
+                                        <div className="h-px w-full bg-white/5 my-1" />
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(file._id, 'file'); setOpenDropdownId(null); }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 hover:text-red-400 transition-colors text-sm text-[#A0A0A0]">
+                                            <InteractiveIconWrapper><Trash2 className="w-4 h-4" /></InteractiveIconWrapper> Supprimer
                                         </button>
                                     </motion.div>
                                 )}
@@ -354,26 +354,24 @@ export function SpaceClient({
 
             {/* Empty State */}
             {folders.length === 0 && files.length === 0 && (
-                <div className="py-24 flex flex-col items-center justify-center gap-8 text-center bg-[#FDFDFD] rounded-[3rem] border-2 border-dashed border-[#F0F0F0]">
+                <div className="py-24 flex flex-col items-center justify-center gap-8 text-center bg-[#0A0503]/40 backdrop-blur-xl rounded-[3rem] border border-white/5">
                     <AnimatedEmptyState type="folder" />
                     <div>
-                        <h2 className="text-2xl font-serif italic text-black">Cet espace est vide</h2>
-                        <p className="text-sm text-[#999999] max-w-xs mx-auto mt-2">
-                            Commencez par ajouter des fichiers ou créez votre premier dossier.
-                        </p>
+                        <h2 className="text-2xl font-serif italic text-white">Cet espace est vide</h2>
+                        <p className="text-[#A0A0A0] text-sm mt-2 max-w-sm mx-auto">Commencez par créer un dossier ou uploader des fichiers.</p>
                     </div>
                     <div className="flex gap-4">
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2 px-8 py-3 bg-black text-white rounded-full text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-black/10"
+                            className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_20px_rgba(249,115,22,0.3)] text-white rounded-full font-bold hover:scale-105 transition-all outline-none"
                         >
-                            <Upload className="w-4 h-4" /> Uploader
+                            <InteractiveIconWrapper><Upload className="w-4 h-4" /></InteractiveIconWrapper> Uploader
                         </button>
                         <button 
                             onClick={() => setIsModalOpen(true)}
                             className="flex items-center gap-2 px-8 py-3 bg-white border border-[#E5E5E5] text-black rounded-full text-xs font-bold hover:border-black transition-all"
                         >
-                            <Plus className="w-4 h-4" /> Nouveau Dossier
+                            <InteractiveIconWrapper><Plus className="w-4 h-4" /></InteractiveIconWrapper> Nouveau Dossier
                         </button>
                     </div>
                 </div>

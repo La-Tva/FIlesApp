@@ -7,27 +7,36 @@
     --font-serif: 'Instrument Serif', serif;
     --font-outfit: 'Outfit', sans-serif;
 
-    --color-background: #FFFFFF;
-    --color-foreground: #000000;
+    /* Base Colors - Deep Dark SAAS Theme */
+    --color-background: #0A0503;
+    /* Very dark warm black */
+    --color-foreground: #FAFAFA;
+    /* Off-white for high contrast */
 
-    --color-card: #FFFFFF;
-    --color-card-foreground: #000000;
+    --color-card: rgba(255, 255, 255, 0.03);
+    /* Frosted glass dark */
+    --color-card-foreground: #FFFFFF;
 
-    --color-primary: #000000;
+    --color-primary: #F97316;
+    /* Orange-500 glow */
     --color-primary-foreground: #FFFFFF;
 
-    --color-secondary: #F5F5F5;
-    --color-secondary-foreground: #000000;
+    --color-secondary: rgba(255, 255, 255, 0.1);
+    --color-secondary-foreground: #FFFFFF;
 
-    --color-muted: #F9F9F9;
-    --color-muted-foreground: #666666;
+    --color-muted: rgba(255, 255, 255, 0.05);
+    /* Very subtle dark backgrounds */
+    --color-muted-foreground: #A0A0A0;
+    /* Mid-grey for secondary text */
 
-    --color-accent: #000000;
+    --color-accent: #EA580C;
+    /* Orange-600 */
     --color-accent-foreground: #FFFFFF;
 
-    --color-border: #E5E5E5;
-    --color-input: #FFFFFF;
-    --color-ring: #000000;
+    --color-border: rgba(255, 255, 255, 0.08);
+    /* Subtle borders */
+    --color-input: rgba(255, 255, 255, 0.05);
+    --color-ring: #F97316;
 
     --radius-lg: 2rem;
     --radius-md: 1.5rem;
@@ -48,6 +57,10 @@
         color: var(--color-foreground);
         @apply font-sans;
         -webkit-font-smoothing: antialiased;
+        /* Optional: a subtle radial glow across the body */
+        background-image: radial-gradient(circle at top right, rgba(249, 115, 22, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at bottom left, rgba(234, 88, 12, 0.05) 0%, transparent 40%);
+        background-attachment: fixed;
     }
 
     h1,
@@ -60,48 +73,62 @@
     }
 }
 
-/* Minimalist Utilities */
+/* Premium SAAS Utilities */
 @utility minimalist-card {
-    background-color: #FFFFFF;
-    border: 1px solid #E5E5E5;
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-radius: var(--radius-lg);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 30px -4px rgba(0, 0, 0, 0.5);
 
     &:hover {
-        border-color: #000000;
+        border-color: rgba(249, 115, 22, 0.4);
+        /* Glow border on hover */
         transform: translateY(-2px);
-        box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 10px 40px -4px rgba(249, 115, 22, 0.15);
+        /* Orange glow */
+        background-color: rgba(255, 255, 255, 0.06);
     }
 }
 
 @utility glass {
-    background-color: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid #E5E5E5;
+    background-color: rgba(10, 5, 3, 0.7);
+    /* Dark glass */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
 }
 
 @utility glass-hover {
     transition: all 0.2s ease;
 
     &:hover {
-        background-color: #F9F9F9;
-        border-color: #000000;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(249, 115, 22, 0.5);
     }
 }
 
 @utility gradient-text {
     background-clip: text;
     color: transparent;
-    background-image: linear-gradient(to bottom, #000, #444);
+    background-image: linear-gradient(to bottom, #FFFFFF, #A0A0A0);
+}
+
+@utility orange-gradient-text {
+    background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #F97316, #FB923C);
 }
 
 @utility premium-shadow {
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 20px 40px -10px rgba(249, 115, 22, 0.1);
 }
 
+/* Base scrollbar styles for dark mode */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -109,10 +136,11 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #E5E5E5;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #000000;
+    background: rgba(249, 115, 22, 0.5);
+    /* Orange hover scrollbar */
 }

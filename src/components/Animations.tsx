@@ -13,7 +13,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           opacity: [0.3, 0.6, 0.3]
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-2 right-2 w-4 h-4 rounded-full bg-black/5"
+        className="absolute top-2 right-2 w-4 h-4 rounded-full bg-orange-500/20"
       />
       <motion.div
         animate={{
@@ -22,7 +22,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           opacity: [0.2, 0.5, 0.2]
         }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-4 left-4 w-3 h-3 rounded-sm bg-black/5 rotate-45"
+        className="absolute bottom-4 left-4 w-3 h-3 rounded-sm bg-orange-500/20 rotate-45"
       />
 
       <motion.div
@@ -39,7 +39,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-black/20"
+          className="text-orange-500/30 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]"
         >
           {type === "folder" && (
             <motion.path
@@ -80,9 +80,9 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
 
       {/* Pulsing rings */}
       <motion.div
-        animate={{ scale: [0.8, 1.5], opacity: [0.5, 0] }}
+        animate={{ scale: [0.8, 1.3], opacity: [0.3, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-        className="absolute inset-0 border border-black/5 rounded-full"
+        className="absolute inset-0 border border-orange-500/20 rounded-full shadow-[0_0_30px_rgba(249,115,22,0.15)]"
       />
     </div>
   );
@@ -94,16 +94,16 @@ export function PulseIndicator() {
       <motion.div
         animate={{ scale: [1, 1.8], opacity: [0.8, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-        className="absolute inset-0 bg-black rounded-full"
+        className="absolute inset-0 bg-orange-500 rounded-full"
       />
-      <div className="relative w-full h-full bg-black rounded-full" />
+      <div className="relative w-full h-full bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
     </div>
   );
 }
 
 export function LivingLogo() {
   return (
-    <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-black flex items-center justify-center overflow-hidden group">
+    <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-[0_0_15px_rgba(249,115,22,0.4)] flex items-center justify-center overflow-hidden group border border-orange-400/50">
       <motion.div
         animate={{
           y: [0, -2, 0],
@@ -154,15 +154,15 @@ export function FolderTab() {
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden rounded-[2rem]">
       <svg className="absolute -top-[1px] -left-[1px]" width="60" height="20" viewBox="0 0 60 20" fill="none">
-        <path d="M0 0H40C45 0 45 12 50 12H60" stroke="#EEEEEE" strokeWidth="1" fill="none" />
-        <path d="M0 0V12H50" stroke="#EEEEEE" strokeWidth="1" fill="none" />
+        <path d="M0 0H40C45 0 45 12 50 12H60" stroke="#FFFFFF" strokeOpacity="0.1" strokeWidth="1" fill="none" />
+        <path d="M0 0V12H50" stroke="#FFFFFF" strokeOpacity="0.1" strokeWidth="1" fill="none" />
         <motion.path
           d="M5 6H25"
-          stroke="black"
+          stroke="#F97316"
           strokeWidth="1.5"
           strokeLinecap="round"
-          opacity="0.1"
-          animate={{ opacity: [0.1, 0.3, 0.1] }}
+          opacity="0.3"
+          animate={{ opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
       </svg>
@@ -174,8 +174,8 @@ export function FileCorner() {
   return (
     <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden rounded-[2rem]">
       <svg className="absolute top-0 right-0" width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <path d="M0 0H30V30L0 0Z" fill="#F9F9F9" opacity="0.5" />
-        <path d="M0 0H30V30" stroke="#E5E5E5" strokeWidth="1" />
+        <path d="M0 0H30V30L0 0Z" fill="#FFFFFF" opacity="0.03" />
+        <path d="M0 0H30V30" stroke="#FFFFFF" strokeOpacity="0.1" strokeWidth="1" />
       </svg>
     </div>
   );
@@ -223,9 +223,18 @@ export function InteractiveIconWrapper({ children, className }: { children: Reac
     return (
         <motion.div
             className={`inline-flex items-center justify-center ${className || ''}`}
-            whileHover={{ scale: 1.12, rotate: [-5, 5, -5, 0] }}
+            animate={{ 
+                y: [0, -1, 0, 1, 0],
+                opacity: [0.9, 1, 0.9]
+            }}
+            transition={{ 
+                duration: 4, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                times: [0, 0.25, 0.5, 0.75, 1]
+            }}
+            whileHover={{ scale: 1.15, rotate: [-5, 5, -5, 0], y: 0, opacity: 1 }}
             whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
             {children}
         </motion.div>
@@ -249,7 +258,8 @@ export function DecorativeWave() {
             ]
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          fill="#F5F5F5"
+          fill="#FFFFFF"
+          fillOpacity="0.02"
         />
       </svg>
     </div>
