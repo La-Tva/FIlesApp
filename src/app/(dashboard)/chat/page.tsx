@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { ChatClient } from "./ChatClient";
 import { redirect } from "next/navigation";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 export default async function GlobalChatPage() {
   const session = await auth();
@@ -10,12 +11,18 @@ export default async function GlobalChatPage() {
   }
 
   return (
-    <div className="flex-1 h-full w-full p-6">
-      <ChatClient
-        spaceId="global"
-        userId={session.user.id}
-        userName={session.user.name || "Utilisateur"}
-      />
-    </div>
+    <DashboardLayout
+      userId={session.user.id}
+      userName={session.user.name || "Utilisateur"}
+      userEmail={session.user.email || ""}
+    >
+      <div className="w-full h-[calc(100dvh-13rem)] xl:h-[calc(100dvh-11rem)]">
+        <ChatClient
+          spaceId="global"
+          userId={session.user.id}
+          userName={session.user.name || "Utilisateur"}
+        />
+      </div>
+    </DashboardLayout>
   );
 }
