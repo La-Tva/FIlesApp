@@ -100,6 +100,7 @@ async function ensureFolderPath(
                 spaceId,
                 parentId: parentId || "null",
                 ownerId: userId,
+                isUploaded: true
             }),
         });
         const data = await res.json();

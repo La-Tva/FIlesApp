@@ -285,13 +285,14 @@ app.post('/api/spaces', async (req, res) => {
 
 app.post('/api/folders', async (req, res) => {
   try {
-    const { name, spaceId, parentId, ownerId } = req.body;
+    const { name, spaceId, parentId, ownerId, isUploaded } = req.body;
     const folders = db.collection('folders');
     const result = await folders.insertOne({
       name,
       spaceId: spaceId ? new ObjectId(spaceId) : null,
       parentId: parentId && parentId !== 'null' ? new ObjectId(parentId) : null,
       ownerId: ownerId ? new ObjectId(ownerId) : null,
+      isUploaded: !!isUploaded,
       createdAt: new Date()
     });
     io.emit('folder_created', { spaceId, name });
