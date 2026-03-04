@@ -32,7 +32,6 @@ import {
   AnimatedSearchLoupe,
   InteractiveIconWrapper,
 } from "@/components/Animations";
-import { ChatClient } from "./ChatClient";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -101,7 +100,6 @@ export function SpaceClient({
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"files" | "chat">("files");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
