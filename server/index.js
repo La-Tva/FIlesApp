@@ -599,13 +599,17 @@ app.put("/api/notes/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { label, content, type } = req.body;
-    
-    if (!label || !content) return res.status(400).json({ error: "Missing required fields" });
+
+    if (!label || !content)
+      return res.status(400).json({ error: "Missing required fields" });
 
     let preview = undefined;
     if (type === "link") {
       try {
-        preview = await getLinkPreview(content, { headers: { "user-agent": "googlebot" }, timeout: 5000 });
+        preview = await getLinkPreview(content, {
+          headers: { "user-agent": "googlebot" },
+          timeout: 5000,
+        });
       } catch (err) {
         console.warn("Could not generate link preview for:", content);
         preview = null;
@@ -615,11 +619,13 @@ app.put("/api/notes/:id", async (req, res) => {
     const updateFields = { label, content };
     if (preview !== undefined) updateFields.preview = preview;
 
-    const result = await db.collection("notes").findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updateFields },
-      { returnDocument: 'after' }
-    );
+    const result = await db
+      .collection("notes")
+      .findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: updateFields },
+        { returnDocument: "after" },
+      );
 
     if (!result) return res.status(404).json({ error: "Note not found" });
     res.json({ note: result });
@@ -633,7 +639,7 @@ app.delete("/api/notes/:id", async (req, res) => {
     const { id } = req.params;
 
     const result = await db.collection("notes").deleteOne({
-      _id: new ObjectId(id)
+      _id: new ObjectId(id),
     });
 
     if (result.deletedCount === 0)
