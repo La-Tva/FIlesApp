@@ -1,21 +1,20 @@
 "use client";
 
-import { useDropzone } from "react-dropzone";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { 
     Upload, 
     X, 
-    File as FileIcon, 
     Loader2, 
     CheckCircle2, 
     LayoutGrid, 
     Star, 
     Clock, 
     Users,
-    Settings, 
     ChevronRight, 
     LogOut,
-    ChevronDown 
+    ChevronDown,
+    HardDrive,
+    FolderOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -32,6 +31,84 @@ interface UploadingFile {
     progress: number;
     status: 'uploading' | 'completed' | 'error';
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatBytes(bytes: number): string {
+    if (bytes === 0) return "0 B";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+/** Recursively collect all File entries from a FileSystemDirectoryEntry */
+async function collectFilesFromEntry(
+    entry: FileSystemEntry,
+    pathPrefix = ""
+): Promise<{ file: File; relativePath: string }[]> {
+    if (entry.isFile) {
+        const file = await new Promise<File>((resolve, reject) =>
+            (entry as FileSystemFileEntry).file(resolve, reject)
+        );
+        return [{ file, relativePath: pathPrefix + entry.name }];
+    }
+
+    if (entry.isDirectory) {
+        const reader = (entry as FileSystemDirectoryEntry).createReader();
+        const allEntries: FileSystemEntry[] = [];
+
+        // createReader may paginate — read until done
+        await new Promise<void>((resolve) => {
+            const readBatch = () =>
+                reader.readEntries((batch) => {
+                    if (batch.length === 0) return resolve();
+                    allEntries.push(...batch);
+                    readBatch();
+                });
+            readBatch();
+        });
+
+        const results: { file: File; relativePath: string }[] = [];
+        for (const child of allEntries) {
+            const childResults = await collectFilesFromEntry(
+                child,
+                pathPrefix + entry.name + "/"
+            );
+            results.push(...childResults);
+        }
+        return results;
+    }
+
+    return [];
+}
+
+/** Ensure all intermediate folders exist on the server, return leaf folderId */
+async function ensureFolderPath(
+    pathSegments: string[],   // e.g. ["MyFolder", "SubFolder"]
+    spaceId: string,
+    userId: string,
+    rootFolderId: string | null
+): Promise<string | null> {
+    let parentId = rootFolderId;
+    for (const segment of pathSegments) {
+        const res = await fetch(`${RENDER_BACKEND_URL}/api/folders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: segment,
+                spaceId,
+                parentId: parentId || "null",
+                ownerId: userId,
+            }),
+        });
+        const data = await res.json();
+        parentId = data.id;
+    }
+    return parentId;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function DashboardLayout({ 
     children, 
@@ -50,81 +127,156 @@ export function DashboardLayout({
 }) {
     const [uploads, setUploads] = useState<UploadingFile[]>([]);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
+    const [storageUsed, setStorageUsed] = useState(0);
+    const dropRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const currentFilter = searchParams.get('filter') || 'all';
 
+    // ── Storage fetch ─────────────────────────────────────────────────────────
+    const fetchStorage = useCallback(async () => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`${RENDER_BACKEND_URL}/api/storage/${userId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setStorageUsed(data.totalBytes || 0);
+            }
+        } catch (_) {}
+    }, [userId]);
+
+    useEffect(() => { fetchStorage(); }, [fetchStorage]);
+
+    // ── Socket.io refresh ─────────────────────────────────────────────────────
     useEffect(() => {
         const socket = io(SOCKET_URL, { transports: ['websocket'] });
         
         const handleRefresh = (data?: any) => {
-            // If we have a spaceId in data, only refresh if we are in that space
-            // Otherwise refresh anyway (like for dashboard updates)
             if (!data || !data.spaceId || data.spaceId === spaceId || spaceId === 'all') {
                 router.refresh();
             }
         };
 
-        socket.on('file_uploaded', handleRefresh);
+        socket.on('file_uploaded', (data) => { handleRefresh(data); fetchStorage(); });
         socket.on('folder_created', handleRefresh);
-        socket.on('item_deleted', handleRefresh);
+        socket.on('item_deleted', (data) => { handleRefresh(data); fetchStorage(); });
         socket.on('item_renamed', handleRefresh);
         socket.on('item_updated', handleRefresh);
         socket.on('space_created', handleRefresh);
         socket.on('space_deleted', handleRefresh);
 
         return () => { socket.disconnect(); };
-    }, [spaceId, router]);
+    }, [spaceId, router, fetchStorage]);
 
-    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // ── Core upload function ──────────────────────────────────────────────────
+    const uploadFileWithPath = useCallback(async (
+        file: File,
+        targetFolderId: string | null,
+        uploadId: string
+    ) => {
+        const formData = new FormData();
+        formData.append('spaceId', spaceId!);
+        formData.append('ownerId', userId);
+        formData.append('folderId', targetFolderId || 'null');
+        formData.append('file', file);
+
+        try {
+            const res = await fetch(`${RENDER_BACKEND_URL}/api/upload`, {
+                method: 'POST',
+                body: formData,
+            });
+            if (res.ok) {
+                setUploads(prev => prev.map(u => u.id === uploadId ? { ...u, status: 'completed', progress: 100 } : u));
+                toast.success(`${file.name} uploadé !`);
+            } else {
+                throw new Error();
+            }
+        } catch (_) {
+            setUploads(prev => prev.map(u => u.id === uploadId ? { ...u, status: 'error' } : u));
+            toast.error(`Erreur pour ${file.name}`);
+        }
+    }, [spaceId, userId]);
+
+    // ── Process dropped items (files + folders) ───────────────────────────────
+    const processDroppedItems = useCallback(async (dataTransfer: DataTransfer) => {
         if (!spaceId) {
             toast.error("Veuillez entrer dans un espace pour uploader des fichiers.");
             return;
         }
 
-        const newUploads = acceptedFiles.map(file => ({
-            id: Math.random().toString(36).substr(2, 9),
-            name: file.name,
-            progress: 0,
-            status: 'uploading' as const
-        }));
+        const items = Array.from(dataTransfer.items);
+        const allFileEntries: { file: File; relativePath: string }[] = [];
 
+        for (const item of items) {
+            if (item.kind !== 'file') continue;
+            const entry = item.webkitGetAsEntry?.();
+            if (!entry) continue;
+            const collected = await collectFilesFromEntry(entry);
+            allFileEntries.push(...collected);
+        }
+
+        if (allFileEntries.length === 0) return;
+
+        // Register all in the upload queue first
+        const newUploads = allFileEntries.map(({ file, relativePath }) => ({
+            id: Math.random().toString(36).substr(2, 9),
+            name: relativePath,
+            progress: 0,
+            status: 'uploading' as const,
+        }));
         setUploads(prev => [...prev, ...newUploads]);
 
-        for (let i = 0; i < acceptedFiles.length; i++) {
-            const file = acceptedFiles[i];
-            const currentUpload = newUploads[i];
+        // Cache for folder path → serverId to avoid duplicate folder creation
+        const folderCache = new Map<string, string | null>();
 
-            const formData = new FormData();
-            formData.append('spaceId', spaceId);
-            formData.append('ownerId', userId);
-            formData.append('folderId', folderId || 'null');
-            formData.append('file', file);
+        for (let i = 0; i < allFileEntries.length; i++) {
+            const { file, relativePath } = allFileEntries[i];
+            const uploadId = newUploads[i].id;
 
-            try {
-                const res = await fetch(`${RENDER_BACKEND_URL}/api/upload`, {
-                    method: 'POST',
-                    body: formData,
-                });
+            // relativePath: "MyFolder/Sub/file.txt" → segments ["MyFolder", "Sub"]
+            const parts = relativePath.split('/');
+            const dirSegments = parts.slice(0, -1); // all except filename
 
-                if (res.ok) {
-                    setUploads(prev => prev.map(u => u.id === currentUpload.id ? { ...u, status: 'completed', progress: 100 } : u));
-                    toast.success(`${file.name} uploadé !`);
+            let targetFolderId = folderId;
+
+            if (dirSegments.length > 0) {
+                const cacheKey = dirSegments.join('/');
+                if (folderCache.has(cacheKey)) {
+                    targetFolderId = folderCache.get(cacheKey)!;
                 } else {
-                    throw new Error();
+                    const newId = await ensureFolderPath(dirSegments, spaceId, userId, folderId);
+                    folderCache.set(cacheKey, newId);
+                    targetFolderId = newId;
                 }
-            } catch (err) {
-                setUploads(prev => prev.map(u => u.id === currentUpload.id ? { ...u, status: 'error' } : u));
-                toast.error(`Erreur pour ${file.name}`);
             }
-        }
-    }, [spaceId, userId, folderId]);
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
-        onDrop,
-        noClick: true,
-        noKeyboard: true
-    });
+            await uploadFileWithPath(file, targetFolderId, uploadId);
+        }
+
+        await fetchStorage();
+    }, [spaceId, folderId, userId, uploadFileWithPath, fetchStorage]);
+
+    // ── Native drag handlers ──────────────────────────────────────────────────
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        // Only deactivate if leaving the whole container
+        if (dropRef.current && !dropRef.current.contains(e.relatedTarget as Node)) {
+            setIsDragActive(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+        await processDroppedItems(e.dataTransfer);
+    }, [processDroppedItems]);
 
     const handleLogout = async () => {
         toast.success("Déconnexion réussie");
@@ -133,10 +285,18 @@ export function DashboardLayout({
 
     const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
+    // Storage bar: soft cap at 1 GB for visual
+    const SOFT_CAP = 1024 * 1024 * 1024;
+    const storagePercent = Math.min((storageUsed / SOFT_CAP) * 100, 100);
+
     return (
-        <div {...getRootProps()} className="min-h-screen bg-transparent text-foreground selection:bg-orange-500/20 selection:text-white font-sans relative flex overflow-hidden">
-            <input {...getInputProps()} />
-            
+        <div
+            ref={dropRef}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className="min-h-screen bg-transparent text-foreground selection:bg-orange-500/20 selection:text-white font-sans relative flex overflow-hidden"
+        >
             {/* Ambient Glowing Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-[#F97316] rounded-bl-[100px] opacity-10 blur-[100px]" />
@@ -177,6 +337,30 @@ export function DashboardLayout({
                         );
                     })}
                 </nav>
+
+                {/* Storage Indicator */}
+                <div className="px-6 pb-2">
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <HardDrive className="w-4 h-4 text-orange-500 shrink-0" />
+                            <span className="text-xs font-bold text-[#A0A0A0] uppercase tracking-widest">Stockage</span>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-black text-white">{formatBytes(storageUsed)}</span>
+                                <span className="text-[10px] text-[#666666] font-bold">/{formatBytes(SOFT_CAP)}</span>
+                            </div>
+                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.6)]"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${storagePercent}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="p-6 border-t border-white/5">
                     <div className="flex items-center gap-3 p-2 rounded-2xl group transition-all">
@@ -298,9 +482,10 @@ export function DashboardLayout({
                     >
                         <div className="flex flex-col items-center gap-6">
                             <div className="w-24 h-24 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 animate-bounce">
-                                <InteractiveIconWrapper><Upload className="w-12 h-12" /></InteractiveIconWrapper>
+                                <FolderOpen className="w-12 h-12" />
                             </div>
-                            <h2 className="text-4xl font-black font-outfit uppercase tracking-tighter text-white drop-shadow-[0_0_20px_rgba(249,115,22,0.5)]">Lâchez pour uploader</h2>
+                            <h2 className="text-4xl font-black font-outfit uppercase tracking-tighter text-white drop-shadow-[0_0_20px_rgba(249,115,22,0.5)]">Lâchez ici</h2>
+                            <p className="text-orange-300/70 text-sm font-bold tracking-widest uppercase">Fichiers ou dossiers acceptés</p>
                         </div>
                     </motion.div>
                 )}

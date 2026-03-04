@@ -1,7 +1,7 @@
 "use client";
  
-import { useState, useRef, useEffect } from "react";
-import { Folder, File, ArrowLeft, Trash2, Plus, Download, Star, Upload, Edit3, Loader2, Search, X, MoreHorizontal } from "lucide-react";
+import { useState, useRef } from "react";
+import { Folder, File, ArrowLeft, Trash2, Plus, Download, Star, Upload, Edit3, Loader2, X, MoreHorizontal, FolderOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreateModal } from "@/components/CreateModal";
@@ -9,6 +9,31 @@ import { RENDER_BACKEND_URL } from "@/lib/constants";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedEmptyState, FolderTab, FileCorner, AnimatedSearchLoupe, InteractiveIconWrapper } from "@/components/Animations";
+
+/** Ensure all intermediate folders exist on the server, return leaf folderId */
+async function ensureFolderPath(
+    pathSegments: string[],
+    spaceId: string,
+    userId: string,
+    rootFolderId: string | null
+): Promise<string | null> {
+    let parentId = rootFolderId;
+    for (const segment of pathSegments) {
+        const res = await fetch(`${RENDER_BACKEND_URL}/api/folders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: segment,
+                spaceId,
+                parentId: parentId || "null",
+                ownerId: userId,
+            }),
+        });
+        const data = await res.json();
+        parentId = data.id;
+    }
+    return parentId;
+}
 
 export function SpaceClient({ 
     userId, 
@@ -32,6 +57,7 @@ export function SpaceClient({
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const folderInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
     const handleFolderClick = (id: string) => {
@@ -140,15 +166,74 @@ export function SpaceClient({
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = e.target.files;
+        if (!selectedFiles || selectedFiles.length === 0) return;
+
+        setUploading(true);
+        let successCount = 0;
+        const folderCache = new Map<string, string | null>();
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            // webkitRelativePath = "FolderName/sub/file.txt"
+            const relativePath = (file as any).webkitRelativePath || file.name;
+            const parts = relativePath.split('/');
+            const dirSegments = parts.slice(0, -1); // strip filename
+
+            let targetFolderId: string | null = folderId;
+
+            if (dirSegments.length > 0) {
+                const cacheKey = dirSegments.join('/');
+                if (folderCache.has(cacheKey)) {
+                    targetFolderId = folderCache.get(cacheKey)!;
+                } else {
+                    const newId = await ensureFolderPath(dirSegments, spaceId, userId, folderId);
+                    folderCache.set(cacheKey, newId);
+                    targetFolderId = newId;
+                }
+            }
+
+            const formData = new FormData();
+            formData.append('spaceId', spaceId);
+            formData.append('ownerId', userId);
+            formData.append('folderId', targetFolderId || 'null');
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (res.ok) { successCount++; toast.success(`${file.name} uploadé !`); }
+                else toast.error(`Erreur pour ${file.name}`);
+            } catch {
+                toast.error(`Erreur pour ${file.name}`);
+            }
+        }
+
+        setUploading(false);
+        if (successCount > 0) router.refresh();
+        if (folderInputRef.current) folderInputRef.current.value = '';
+    };
+
     return (
         <div className="flex flex-col gap-8">
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input 
                 ref={fileInputRef}
                 type="file" 
                 multiple 
                 className="hidden" 
                 onChange={handleFileUpload}
+            />
+            <input
+                ref={folderInputRef}
+                type="file"
+                className="hidden"
+                multiple
+                onChange={handleFolderUpload}
+                {...({ webkitdirectory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
             />
 
             {/* Header Navigation */}
@@ -185,7 +270,15 @@ export function SpaceClient({
                         className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full text-xs font-bold hover:scale-105 transition-all shadow-[0_4px_20px_rgba(249,115,22,0.3)] disabled:opacity-50"
                     >
                         {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <InteractiveIconWrapper><Upload className="w-4 h-4 transition-transform group-hover:-translate-y-1" /></InteractiveIconWrapper>}
-                        {uploading ? "..." : "Uploader"}
+                        {uploading ? "..." : "Fichiers"}
+                    </button>
+                    <button 
+                        onClick={() => folderInputRef.current?.click()}
+                        disabled={uploading}
+                        className="group flex items-center justify-center gap-2 px-6 py-3 bg-[#0A0503]/50 backdrop-blur-md border border-orange-500/20 text-orange-400 rounded-full text-xs font-bold hover:border-orange-500/60 hover:bg-orange-500/10 transition-all disabled:opacity-50"
+                    >
+                        <InteractiveIconWrapper><FolderOpen className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" /></InteractiveIconWrapper>
+                        Dossier entier
                     </button>
                     <button 
                         onClick={() => setIsModalOpen(true)}
@@ -360,12 +453,18 @@ export function SpaceClient({
                         <h2 className="text-2xl font-serif italic text-white">Cet espace est vide</h2>
                         <p className="text-[#A0A0A0] text-sm mt-2 max-w-sm mx-auto">Commencez par créer un dossier ou uploader des fichiers.</p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4 justify-center">
                         <button 
                             onClick={() => fileInputRef.current?.click()}
                             className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_20px_rgba(249,115,22,0.3)] text-white rounded-full font-bold hover:scale-105 transition-all outline-none"
                         >
-                            <InteractiveIconWrapper><Upload className="w-4 h-4" /></InteractiveIconWrapper> Uploader
+                            <InteractiveIconWrapper><Upload className="w-4 h-4" /></InteractiveIconWrapper> Fichiers
+                        </button>
+                        <button 
+                            onClick={() => folderInputRef.current?.click()}
+                            className="flex items-center gap-2 px-8 py-4 bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-full font-bold hover:scale-105 hover:bg-orange-500/20 transition-all outline-none"
+                        >
+                            <InteractiveIconWrapper><FolderOpen className="w-4 h-4" /></InteractiveIconWrapper> Dossier entier
                         </button>
                         <button 
                             onClick={() => setIsModalOpen(true)}

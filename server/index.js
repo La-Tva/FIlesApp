@@ -347,6 +347,22 @@ app.delete('/api/items', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/storage/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!/^[0-9a-fA-F]{24}$/.test(userId)) {
+      return res.json({ totalBytes: 0 });
+    }
+    const result = await db.collection('files').aggregate([
+      { $match: { ownerId: new ObjectId(userId) } },
+      { $group: { _id: null, totalBytes: { $sum: '$size' } } }
+    ]).toArray();
+    res.json({ totalBytes: result[0]?.totalBytes || 0 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/favorites/toggle', async (req, res) => {
   try {
     const { id, type } = req.body;
