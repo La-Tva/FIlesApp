@@ -372,23 +372,23 @@ export function SpaceClient({
                         }}
                         whileHover={{ y: -4 }}
                         onClick={() => handleFolderClick(folder._id)}
-                        className="minimalist-card flex flex-col gap-2 group relative h-full p-8"
+                        className="minimalist-card flex flex-col justify-center group relative p-5 md:col-span-2 lg:col-span-2 h-auto"
                     >
                         <FolderTab />
-                        <div className="flex-1 min-w-0 relative z-10">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-orange-500 group-hover:border-orange-500 group-hover:shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-all">
+                        <div className="flex-1 min-w-0 relative z-10 w-full">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 shrink-0 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-orange-500 group-hover:border-orange-500 group-hover:shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-all">
                                     <InteractiveIconWrapper>
                                         {folder.isUploaded ? (
-                                            <UploadCloud className="w-6 h-6 fill-current opacity-80 group-hover:opacity-100" />
+                                            <UploadCloud className="w-5 h-5 fill-current opacity-80 group-hover:opacity-100" />
                                         ) : (
-                                            <Folder className="w-6 h-6 fill-current opacity-80 group-hover:opacity-100" />
+                                            <Folder className="w-5 h-5 fill-current opacity-80 group-hover:opacity-100" />
                                         )}
                                     </InteractiveIconWrapper>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xl font-bold text-white group-hover:text-orange-500 group-hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all truncate pb-1">{folder.name}</p>
-                                    <div className="flex items-center gap-2 mt-1">
+                                <div className="flex-1 min-w-0 pr-8">
+                                    <p className="text-lg font-bold text-white group-hover:text-orange-500 group-hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all truncate pb-0.5">{folder.name}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
                                         {folder.isUploaded && (
                                             <>
                                                 <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest bg-orange-500/10 px-1.5 rounded-sm">Uploadé</span>
@@ -402,13 +402,11 @@ export function SpaceClient({
                                                 <InteractiveIconWrapper><Star className="w-3 h-3 text-orange-500 fill-orange-500" /></InteractiveIconWrapper>
                                             </>
                                         )}
-                                        <div className="w-1 h-1 rounded-full bg-white/20" />
-                                        <p className="text-[10px] text-[#A0A0A0] font-bold uppercase tracking-widest">Dossier</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className={`absolute top-3 right-3 ${openDropdownId === folder._id ? 'z-50' : 'z-20'}`}>
+                        <div className={`absolute top-1/2 -translate-y-1/2 right-4 ${openDropdownId === folder._id ? 'z-50' : 'z-20'}`}>
                             <button 
                                 onClick={(e) => { 
                                     e.preventDefault();

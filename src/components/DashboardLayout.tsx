@@ -305,7 +305,7 @@ export function DashboardLayout({
             </div>
 
             {/* Sidebar */}
-            <aside className="w-72 bg-[#0A0503]/40 backdrop-blur-3xl border-r border-white/5 flex flex-col relative z-20 hidden lg:flex">
+            <aside className="w-72 bg-[#0A0503]/40 backdrop-blur-3xl border-r border-white/5 flex flex-col relative z-20 hidden xl:flex">
                 <div className="p-8">
                     <Link href="/main" className="flex items-center gap-3 group">
                         <LivingLogo />
@@ -377,7 +377,7 @@ export function DashboardLayout({
             </aside>
 
             {/* Mobile Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 bg-[#0A0503]/80 backdrop-blur-2xl border-t border-white/5 z-[100] h-20 flex items-center justify-around lg:hidden px-6 pb-2">
+            <div className="fixed bottom-0 left-0 right-0 bg-[#0A0503]/80 backdrop-blur-2xl border-t border-white/5 z-[100] h-20 flex items-center justify-around xl:hidden px-6 pb-2">
                 {[
                     { icon: LayoutGrid, href: '/main', filter: 'all' },
                     { icon: Star, href: '/main?filter=favorites', filter: 'favorites' },
@@ -407,14 +407,14 @@ export function DashboardLayout({
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Global Header */}
-                <header className="h-20 lg:h-24 px-8 border-b border-white/5 flex items-center justify-between relative z-10 bg-[#0A0503]/40 backdrop-blur-xl">
-                    <div className="flex items-center gap-4 lg:hidden">
+                <header className="h-20 xl:h-24 px-8 border-b border-white/5 flex items-center justify-between relative z-10 bg-[#0A0503]/40 backdrop-blur-xl">
+                    <div className="flex items-center gap-4 xl:hidden">
                          <Link href="/main">
                             <LivingLogo />
                          </Link>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-2 ml-4 lg:ml-0">
+                    <div className="hidden xl:flex items-center gap-2 ml-4 xl:ml-0">
                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#999999]">Applications</p>
                          <InteractiveIconWrapper><ChevronRight className="w-3 h-3 text-white/20" /></InteractiveIconWrapper>
                          <p className="text-[10px] font-bold uppercase tracking-widest text-white">Explorateur</p>
@@ -459,7 +459,7 @@ export function DashboardLayout({
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
+                <main className="flex-1 overflow-y-auto custom-scrollbar p-4 xl:p-8">
                     <motion.div 
                         key={currentFilter}
                         initial={{ opacity: 0, y: 10 }}
