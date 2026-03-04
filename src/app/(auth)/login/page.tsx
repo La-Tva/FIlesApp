@@ -19,7 +19,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const result = await signIn("credentials", {
         email,
@@ -58,14 +58,20 @@ export default function LoginPage() {
           >
             <ArrowRight className="w-10 h-10 -rotate-45" />
           </motion.div>
-          <h1 className="text-5xl font-serif italic tracking-tight text-white mb-4">SwiftDrop</h1>
-          <p className="text-[#A0A0A0] font-bold uppercase tracking-widest text-[10px]">Espace de stockage premium</p>
+          <h1 className="text-5xl font-serif italic tracking-tight text-white mb-4">
+            SwiftDrop
+          </h1>
+          <p className="text-[#A0A0A0] font-bold uppercase tracking-widest text-[10px]">
+            Espace de stockage premium
+          </p>
         </div>
 
         <div className="bg-[#0A0503]/50 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/5 shadow-[0_10px_40px_-10px_rgba(249,115,22,0.2)] relative z-10">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-[0.2em] ml-1 group-focus-within:text-orange-500 transition-colors">Email</label>
+              <label className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-[0.2em] ml-1 group-focus-within:text-orange-500 transition-colors">
+                Email
+              </label>
               <div className="relative group">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666] group-focus-within:text-orange-500 transition-colors" />
                 <input
@@ -80,7 +86,9 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-[0.2em] ml-1 group-focus-within:text-orange-500 transition-colors">Mot de passe</label>
+              <label className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-[0.2em] ml-1 group-focus-within:text-orange-500 transition-colors">
+                Mot de passe
+              </label>
               <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666666] group-focus-within:text-orange-500 transition-colors" />
                 <input
@@ -100,14 +108,16 @@ export default function LoginPage() {
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-5 rounded-full hover:scale-[1.02] transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 shadow-[0_4px_20px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_25px_rgba(249,115,22,0.4)]"
             >
               {loading ? "Connexion..." : "Se connecter"}
-              {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+              {!loading && (
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              )}
             </button>
           </form>
 
           <div className="mt-10 pt-8 border-t border-white/5">
-              <p className="text-center text-xs text-[#A0A0A0] font-medium">
-                Pas encore de compte ? <Link href="/register" className="text-orange-500 font-bold hover:text-orange-400 hover:drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all">S'inscrire gratuitement</Link>
-              </p>
+            <p className="text-center text-xs text-[#A0A0A0] font-medium">
+              Accès réservé - SwiftDrop Premium
+            </p>
           </div>
         </div>
       </motion.div>
