@@ -153,12 +153,22 @@ export function SpaceClient({
 
     const handleDownload = (fileId: string) => {
         const url = `${RENDER_BACKEND_URL}/api/download/${fileId}`;
-        window.open(url, '_blank');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     };
 
     const handleDownloadFolder = (folderId: string) => {
         const url = `${RENDER_BACKEND_URL}/api/folders/${folderId}/download`;
-        window.open(url, '_blank');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
