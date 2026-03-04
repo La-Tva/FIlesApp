@@ -15,7 +15,7 @@ import {
   ChevronDown,
   HardDrive,
   FolderOpen,
-  MessageSquare,
+  Book,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -382,10 +382,10 @@ export function DashboardLayout({
               filter: "all",
             },
             {
-              icon: MessageSquare,
-              label: "Discussion",
-              href: "/chat",
-              filter: "chat",
+              icon: Book,
+              label: "Notes & Liens",
+              href: "/notes",
+              filter: "notes",
             },
             {
               icon: Star,
@@ -476,7 +476,7 @@ export function DashboardLayout({
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0503]/80 backdrop-blur-2xl border-t border-white/5 z-[100] h-20 flex items-center justify-around xl:hidden px-6 pb-2">
         {[
           { icon: LayoutGrid, href: "/main", filter: "all" },
-          { icon: MessageSquare, href: "/chat", filter: "chat" },
+          { icon: Book, href: "/notes", filter: "notes" },
           { icon: Star, href: "/main?filter=favorites", filter: "favorites" },
           { icon: Clock, href: "/main?filter=recents", filter: "recents" },
         ].map((item, i) => {
