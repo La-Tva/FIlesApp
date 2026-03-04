@@ -8,6 +8,7 @@ const { GridFsStorage } = require('multer-gridfs-storage');
 const path = require('path');
 const dotenv = require('dotenv');
 const archiver = require('archiver');
+const { getLinkPreview } = require("link-preview-js");
 
 dotenv.config();
 
@@ -463,6 +464,38 @@ app.get('/api/folders/:folderId/download', async (req, res) => {
   }
 });
 
+// Chat / Messages API
+app.get('/api/spaces/:spaceId/messages', async (req, res) => {
+  try {
+    const { spaceId } = req.params;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    // Check if space exists and is global or specific
+    const query = spaceId === 'global' ? { spaceId: null } : { spaceId: new ObjectId(spaceId) };
+    
+    const messages = await db.collection('messages')
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
+      
+    res.json({ messages: messages.reverse() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/link-preview', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "Missing url" });
+    const preview = await getLinkPreview(url, { headers: { "user-agent": "googlebot" }, timeout: 5000 });
+    res.json({ preview });
+  } catch (e) {
+    res.status(500).json({ error: "Preview failed", details: e.message });
+  }
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error("EXPRESS ERROR:", err);
@@ -474,7 +507,53 @@ app.use((err, req, res, next) => {
 // Simple Socket.io implementation
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  socket.on('disconnect', () => console.log('Client disconnected'));
+  
+  socket.on('join_space', (spaceId) => {
+      socket.join(`space_${spaceId}`);
+      console.log(`Socket ${socket.id} joined space_${spaceId}`);
+  });
+
+  socket.on('leave_space', (spaceId) => {
+      socket.leave(`space_${spaceId}`);
+  });
+
+  socket.on('send_message', async (data) => {
+      // data: { spaceId, ownerId, ownerName, text, attachments: [] }
+      try {
+          const { spaceId, ownerId, ownerName, text, attachments } = data;
+          
+          let preview = null;
+          // Simple URL extraction for preview if no attachments, just first URL found
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const urls = text ? text.match(urlRegex) : null;
+          
+          if (urls && urls.length > 0) {
+              try {
+                  preview = await getLinkPreview(urls[0], { headers: { "user-agent": "googlebot" }, timeout: 3000 });
+              } catch(e) { /* ignore preview error */ }
+          }
+          
+          const messageDoc = {
+              spaceId: spaceId === 'global' ? null : new ObjectId(spaceId),
+              ownerId: ownerId ? new ObjectId(ownerId) : null,
+              ownerName: ownerName || 'Utilisateur',
+              text: text || '',
+              attachments: attachments || [],
+              preview: preview || null,
+              createdAt: new Date()
+          };
+          
+          const result = await db.collection('messages').insertOne(messageDoc);
+          messageDoc._id = result.insertedId;
+          
+          // Broadcast to everyone in the room
+          io.to(`space_${spaceId}`).emit('receive_message', messageDoc);
+      } catch (err) {
+          console.error("Socket send_message Error:", err);
+      }
+  });
+
+  socket.on('disconnect', () => console.log('Client disconnected', socket.id));
 });
 
 server.listen(PORT, '0.0.0.0', () => {

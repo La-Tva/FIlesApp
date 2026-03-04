@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef } from "react";
 import useSWR from "swr";
@@ -32,7 +32,6 @@ import {
   AnimatedSearchLoupe,
   InteractiveIconWrapper,
 } from "@/components/Animations";
-import { ChatClient } from "./ChatClient";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -79,7 +78,7 @@ export function SpaceClient({
   files: any[];
   folderPath?: { id: string; name: string }[];
 }) {
-  // SWR key — changes when navigating into sub-folders
+  // SWR key ΓÇö changes when navigating into sub-folders
   const swrKey = `/api/spaces/${spaceId}/contents${folderId ? `?folderId=${folderId}` : ""}`;
   const { data, mutate } = useSWR(swrKey, fetcher, {
     fallbackData: {
@@ -101,7 +100,6 @@ export function SpaceClient({
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"files" | "chat">("files");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -125,14 +123,14 @@ export function SpaceClient({
         body: JSON.stringify({ id, type }),
       });
       refresh();
-      toast.success("Favoris mis à jour");
+      toast.success("Favoris mis ├á jour");
     } catch (err) {
       toast.error("Erreur lors de la mise en favori");
     }
   };
 
   const handleDelete = async (id: string, type: "file" | "folder") => {
-    if (!confirm("Supprimer cet élément ?")) return;
+    if (!confirm("Supprimer cet ├⌐l├⌐ment ?")) return;
     // Optimistic update
     if (type === "folder") {
       mutate(
@@ -151,7 +149,7 @@ export function SpaceClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, type }),
       });
-      toast.success("Supprimé");
+      toast.success("Supprim├⌐");
       refresh();
     } catch (err) {
       toast.error("Erreur de suppression");
@@ -184,7 +182,7 @@ export function SpaceClient({
         body: JSON.stringify({ id, type, newName }),
       });
       refresh();
-      toast.success("Renommé avec succès");
+      toast.success("Renomm├⌐ avec succ├¿s");
     } catch (err) {
       toast.error("Erreur de renommage");
     }
@@ -230,7 +228,7 @@ export function SpaceClient({
           body: formData,
         });
         if (res.ok) {
-          toast.success(`${file.name} uploadé !`);
+          toast.success(`${file.name} upload├⌐ !`);
           successCount++;
         } else {
           toast.error(`Erreur pour ${file.name}`);
@@ -292,7 +290,7 @@ export function SpaceClient({
         });
         if (res.ok) {
           successCount++;
-          toast.success(`${file.name} uploadé !`);
+          toast.success(`${file.name} upload├⌐ !`);
         } else toast.error(`Erreur pour ${file.name}`);
       } catch {
         toast.error(`Erreur pour ${file.name}`);
@@ -534,7 +532,7 @@ export function SpaceClient({
                       {folder.isUploaded && (
                         <>
                           <span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest bg-orange-500/10 px-1.5 rounded-sm">
-                            Uploadé
+                            Upload├⌐
                           </span>
                           <div className="w-1 h-1 rounded-full bg-white/20" />
                         </>
@@ -608,7 +606,7 @@ export function SpaceClient({
                         <InteractiveIconWrapper>
                           <Download className="w-4 h-4" />
                         </InteractiveIconWrapper>{" "}
-                        Télécharger (.zip)
+                        T├⌐l├⌐charger (.zip)
                       </button>
                       <button
                         onClick={(e) => {
@@ -735,7 +733,7 @@ export function SpaceClient({
                         <InteractiveIconWrapper>
                           <Download className="w-4 h-4" />
                         </InteractiveIconWrapper>{" "}
-                        Télécharger
+                        T├⌐l├⌐charger
                       </button>
                       <button
                         onClick={(e) => {
@@ -781,7 +779,7 @@ export function SpaceClient({
               Cet espace est vide
             </h2>
             <p className="text-[#A0A0A0] text-sm mt-2 max-w-sm mx-auto">
-              Commencez par créer un dossier ou uploader des fichiers.
+              Commencez par cr├⌐er un dossier ou uploader des fichiers.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 justify-center">
@@ -852,7 +850,7 @@ export function SpaceClient({
                       {selectedFile.name}
                     </h3>
                     <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB ΓÇó{" "}
                       {selectedFile.type}
                     </p>
                   </div>
@@ -861,7 +859,7 @@ export function SpaceClient({
                   <button
                     onClick={() => handleDownload(selectedFile._id)}
                     className="p-3 text-slate-400 hover:text-white transition-colors glass rounded-xl"
-                    title="Télécharger"
+                    title="T├⌐l├⌐charger"
                   >
                     <Download className="w-5 h-5" />
                   </button>
@@ -899,16 +897,16 @@ export function SpaceClient({
                     </div>
                     <div>
                       <p className="text-white font-bold text-lg">
-                        Aperçu non disponible
+                        Aper├ºu non disponible
                       </p>
                       <p className="text-slate-500 text-sm mt-1 mb-8">
-                        Ce type de fichier ne peut pas être lu directement ici.
+                        Ce type de fichier ne peut pas ├¬tre lu directement ici.
                       </p>
                       <button
                         onClick={() => handleDownload(selectedFile._id)}
                         className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold flex items-center gap-3 transition-all"
                       >
-                        <Download className="w-5 h-5" /> Télécharger pour voir
+                        <Download className="w-5 h-5" /> T├⌐l├⌐charger pour voir
                       </button>
                     </div>
                   </div>
