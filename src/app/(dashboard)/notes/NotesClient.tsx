@@ -22,8 +22,10 @@ import {
 } from "@/components/Animations";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { preload } from "swr";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+preload(`${RENDER_BACKEND_URL}/api/notes`, fetcher);
 
 interface Note {
   _id: string;
@@ -51,9 +53,9 @@ export function NotesClient({
   const { data, isLoading, mutate } = useSWR(
     `${RENDER_BACKEND_URL}/api/notes`,
     fetcher,
-    { revalidateOnFocus: true },
+    { revalidateOnFocus: true, revalidateOnMount: true },
   );
-  const [notes, setNotes] = useState<Note[]>([]);
+  const notes = data?.notes || [];
   const [activeTab, setActiveTab] = useState<"link" | "doc">("link");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -73,12 +75,6 @@ export function NotesClient({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (data?.notes) {
-      setNotes(data.notes);
-    }
-  }, [data]);
-
   // Handle clicking outside the action menu
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -92,6 +88,11 @@ export function NotesClient({
 
   const handleDelete = async (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer cet élément ?")) return;
+
+    // Optimistic Update
+    const newNotes = notes.filter((n: Note) => n._id !== id);
+    mutate({ notes: newNotes }, false);
+
     try {
       const res = await fetch(`${RENDER_BACKEND_URL}/api/notes/${id}`, {
         method: "DELETE",
@@ -101,9 +102,11 @@ export function NotesClient({
         mutate();
       } else {
         toast.error("Erreur lors de la suppression");
+        mutate();
       }
     } catch (e) {
       toast.error("Erreur réseau");
+      mutate();
     }
   };
 
@@ -126,10 +129,10 @@ export function NotesClient({
 
       if (res.ok) {
         toast.success(activeTab === "link" ? "Lien ajouté" : "Document créé");
-        mutate();
         setIsModalOpen(false);
         setNewLabel("");
         setNewContent("");
+        await mutate(); // Wait for actual data
       } else {
         toast.error("Erreur lors de la création");
       }
@@ -151,6 +154,17 @@ export function NotesClient({
     if (!editingNote || !editLabel || !editContent) return;
     setIsUpdating(true);
 
+    // Optimistic Update
+    const updatedNote = {
+      ...editingNote,
+      label: editLabel,
+      content: editContent,
+    };
+    const newNotes = notes.map((n: Note) =>
+      n._id === editingNote._id ? updatedNote : n,
+    );
+    mutate({ notes: newNotes }, false);
+
     try {
       const res = await fetch(
         `${RENDER_BACKEND_URL}/api/notes/${editingNote._id}`,
@@ -167,13 +181,15 @@ export function NotesClient({
 
       if (res.ok) {
         toast.success("Modifications sauvegardées");
-        mutate();
         setEditingNote(null);
+        await mutate();
       } else {
         toast.error("Erreur lors de la sauvegarde");
+        mutate();
       }
     } catch (err) {
       toast.error("Erreur réseau");
+      mutate();
     } finally {
       setIsUpdating(false);
     }
@@ -199,7 +215,7 @@ export function NotesClient({
   );
 
   return (
-    <div className="flex flex-col h-full bg-[#0A0503]/40 backdrop-blur-xl border border-white/5 rounded-2xl md:rounded-3xl overflow-hidden text-white p-4 md:p-6 relative">
+    <div className="flex flex-col h-full bg-[#0A0503]/40 backdrop-blur-xl border border-white/5 rounded-[2rem] md:rounded-3xl overflow-hidden text-white p-4 md:p-6 relative">
       {/* 🔴 Header and Search - Optimized for Mobile */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-8 gap-4 shrink-0">
         <div>
@@ -270,10 +286,10 @@ export function NotesClient({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-24 md:pb-6">
-            {filteredNotes.map((note) => (
+            {filteredNotes.map((note: Note) => (
               <div
                 key={note._id}
-                className="group relative bg-[#0A0503]/50 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all flex flex-col h-40 md:h-48"
+                className={`group relative bg-[#0A0503]/50 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] transition-all flex flex-col ${note.type === "link" ? "min-h-[220px] md:min-h-[260px]" : "h-40 md:h-48"}`}
               >
                 {/* Header of Card */}
                 <div className="flex items-start justify-between mb-2">
@@ -350,22 +366,22 @@ export function NotesClient({
 
                 {/* Body of Card */}
                 {note.type === "link" ? (
-                  <div className="flex-1 mt-2 relative">
+                  <div className="flex-1 mt-2 flex flex-col min-h-0">
                     <a
                       href={note.content}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs md:text-sm text-orange-500 font-medium line-clamp-2 hover:underline"
+                      className="text-xs md:text-sm text-orange-500 font-medium line-clamp-1 hover:underline mb-2"
                     >
                       {note.content}
                     </a>
 
-                    {/* Hover Link Preview - Only on Desktop */}
+                    {/* Permanent Link Preview */}
                     {note.preview && Object.keys(note.preview).length > 0 && (
-                      <div className="absolute inset-x-0 bottom-0 top-0 mt-6 bg-[#000000] border border-white/10 rounded-xl overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden xl:group-hover:flex flex-col shadow-2xl pointer-events-none">
+                      <div className="flex-1 bg-black/40 border border-white/5 rounded-xl overflow-hidden flex flex-col shadow-xl">
                         {note.preview.images &&
                           note.preview.images.length > 0 && (
-                            <div className="h-16 w-full bg-white/5 shrink-0">
+                            <div className="h-20 w-full bg-white/5 shrink-0">
                               <img
                                 src={note.preview.images[0]}
                                 alt=""
@@ -377,7 +393,7 @@ export function NotesClient({
                           <p className="text-[10px] md:text-xs font-bold text-white line-clamp-1">
                             {note.preview.title}
                           </p>
-                          <p className="text-[8px] md:text-[10px] text-[#A0A0A0] line-clamp-1 mt-0.5">
+                          <p className="text-[8px] md:text-[10px] text-[#A0A0A0] line-clamp-2 mt-0.5">
                             {note.preview.description}
                           </p>
                         </div>
