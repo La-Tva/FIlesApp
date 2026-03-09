@@ -159,13 +159,43 @@ export function DashboardLayout({
 
   useEffect(() => {
     fetchStorage();
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, [fetchStorage]);
 
   // ── Socket.io refresh ─────────────────────────────────────────────────────
   useEffect(() => {
     const socket = io(SOCKET_URL, { transports: ["websocket"] });
 
-    const handleRefresh = (data?: any) => {
+    const showDesktopNotification = (data: any, action: string) => {
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        // Only notify if it's a global action from someone else
+        if (data.isGlobal && data.ownerId !== userId) {
+          const title = "SwiftDrop - Nouveau dans l'Espace Commun";
+          let body = "";
+          
+          if (action === "upload") body = `${data.senderName} a ajouté le fichier : ${data.fileName}`;
+          else if (action === "folder") body = `${data.senderName} a créé le dossier : ${data.name}`;
+          else if (action === "note") body = `${data.senderName} a ajouté une note/lien : ${data.label}`;
+
+          if (body) {
+            new Notification(title, {
+              body,
+              icon: "/favicon.ico", // Ensure this exists or use a generic icon
+            });
+          }
+        }
+      }
+    };
+
+    const handleRefresh = (data?: any, action?: string) => {
+      if (action) {
+        showDesktopNotification(data, action);
+      }
       if (
         !data ||
         !data.spaceId ||
@@ -184,18 +214,19 @@ export function DashboardLayout({
     };
 
     socket.on("file_uploaded", (data) => {
-      handleRefresh(data);
+      handleRefresh(data, "upload");
       fetchStorage();
     });
-    socket.on("folder_created", handleRefresh);
+    socket.on("folder_created", (data) => handleRefresh(data, "folder"));
+    socket.on("note_created", (data) => handleRefresh(data, "note"));
     socket.on("item_deleted", (data) => {
       handleRefresh(data);
       fetchStorage();
     });
-    socket.on("item_renamed", handleRefresh);
-    socket.on("item_updated", handleRefresh);
-    socket.on("space_created", handleRefresh);
-    socket.on("space_deleted", handleRefresh);
+    socket.on("item_renamed", (data) => handleRefresh(data));
+    socket.on("item_updated", (data) => handleRefresh(data));
+    socket.on("space_created", (data) => handleRefresh(data));
+    socket.on("space_deleted", (data) => handleRefresh(data));
 
     return () => {
       socket.disconnect();

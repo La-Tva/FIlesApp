@@ -140,9 +140,9 @@ async function connectDB() {
 
     // Seed Global Space
     const spaces = db.collection("spaces");
-    const globalSpace = await spaces.findOne({ isGlobal: true });
+    let globalSpace = await spaces.findOne({ isGlobal: true });
     if (!globalSpace) {
-      await spaces.insertOne({
+      const result = await spaces.insertOne({
         name: "Espace Commun",
         isGlobal: true,
         ownerId: null,
@@ -150,8 +150,11 @@ async function connectDB() {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      globalSpace = { _id: result.insertedId };
       console.log("Global Space seeded");
     }
+    global.GLOBAL_SPACE_ID = globalSpace._id.toString();
+    console.log("Global Space ID:", global.GLOBAL_SPACE_ID);
   } catch (error) {
     console.error("Connection/Seeding error:", error);
   }
@@ -235,10 +238,14 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       `DB OK: Record created with ID: ${result.insertedId} in 'files' collection`,
     );
 
+    const user = ownerId ? await db.collection("users").findOne({ _id: new ObjectId(ownerId) }) : null;
+
     io.emit("file_uploaded", {
       spaceId,
       fileName: newFile.name,
       ownerId,
+      senderName: user?.name || "Un utilisateur",
+      isGlobal: spaceId === global.GLOBAL_SPACE_ID
     });
 
     res
@@ -350,7 +357,14 @@ app.post("/api/folders", async (req, res) => {
       isUploaded: !!isUploaded,
       createdAt: new Date(),
     });
-    io.emit("folder_created", { spaceId, name });
+    const user = ownerId ? await db.collection("users").findOne({ _id: new ObjectId(ownerId) }) : null;
+    io.emit("folder_created", { 
+      spaceId, 
+      name, 
+      ownerId,
+      senderName: user?.name || "Un utilisateur",
+      isGlobal: spaceId === global.GLOBAL_SPACE_ID
+    });
     res.status(201).json({ id: result.insertedId });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -589,6 +603,15 @@ app.post("/api/notes", async (req, res) => {
     };
 
     const result = await db.collection("notes").insertOne(newNote);
+    const user = await db.collection("users").findOne({ _id: new ObjectId(ownerId) });
+    
+    io.emit("note_created", {
+      ...newNote,
+      _id: result.insertedId,
+      senderName: user?.name || "Un utilisateur",
+      isGlobal: true // Notes are effectively global/shared in the current UI logic
+    });
+
     res.json({ note: { ...newNote, _id: result.insertedId } });
   } catch (e) {
     res.status(500).json({ error: e.message });
