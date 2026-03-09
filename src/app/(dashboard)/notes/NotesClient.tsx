@@ -517,7 +517,7 @@ export function NotesClient({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.98, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={`bg-[#0A0503] flex flex-col border border-white/10 shadow-[0_20px_80px_rgba(249,115,22,0.15)] relative
+              className={`bg-[#0A0503] flex flex-col border border-white/10 shadow-[0_20px_80px_rgba(249,115,22,0.15)] relative overflow-hidden
                 ${editingNote.type === "doc" ? "w-full h-full rounded-none md:rounded-3xl md:m-6 md:h-[calc(100vh-3rem)]" : "w-full max-w-lg rounded-3xl p-6"}
               `}
             >
