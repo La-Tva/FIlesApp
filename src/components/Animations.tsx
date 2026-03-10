@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "file" | "activity" | "search" }) {
+export function AnimatedEmptyState({ type = "folder", isPrivate }: { type?: "folder" | "file" | "activity" | "search", isPrivate?: boolean }) {
   return (
     <div className="relative w-32 h-32 flex items-center justify-center">
       {/* Floating geometric shapes */}
@@ -13,7 +13,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           opacity: [0.3, 0.6, 0.3]
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-2 right-2 w-4 h-4 rounded-full bg-orange-500/20"
+        className={`absolute top-2 right-2 w-4 h-4 rounded-full ${isPrivate ? 'bg-private/20' : 'bg-orange-500/20'}`}
       />
       <motion.div
         animate={{
@@ -22,7 +22,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           opacity: [0.2, 0.5, 0.2]
         }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-4 left-4 w-3 h-3 rounded-sm bg-orange-500/20 rotate-45"
+        className={`absolute bottom-4 left-4 w-3 h-3 rounded-sm ${isPrivate ? 'bg-private/20' : 'bg-orange-500/20'} rotate-45`}
       />
 
       <motion.div
@@ -39,7 +39,7 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-orange-500/30 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+          className={`${isPrivate ? 'text-private/30 drop-shadow-[0_0_10px_rgba(0,191,165,0.5)]' : 'text-orange-500/30 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]'}`}
         >
           {type === "folder" && (
             <motion.path
@@ -88,22 +88,29 @@ export function AnimatedEmptyState({ type = "folder" }: { type?: "folder" | "fil
   );
 }
 
-export function PulseIndicator() {
+export function PulseIndicator({ color = "#F97316" }: { color?: string }) {
   return (
     <div className="relative w-2 h-2">
       <motion.div
         animate={{ scale: [1, 1.8], opacity: [0.8, 0] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-        className="absolute inset-0 bg-orange-500 rounded-full"
+        className="absolute inset-0 rounded-full"
+        style={{ backgroundColor: color }}
       />
-      <div className="relative w-full h-full bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
+      <div 
+        className="relative w-full h-full rounded-full" 
+        style={{ 
+          backgroundColor: color,
+          boxShadow: `0 0 10px ${color}CC` 
+        }} 
+      />
     </div>
   );
 }
 
-export function LivingLogo() {
+export function LivingLogo({ isPrivate }: { isPrivate?: boolean }) {
   return (
-    <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-[0_0_15px_rgba(249,115,22,0.4)] flex items-center justify-center overflow-hidden group border border-orange-400/50">
+    <div className={`relative w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${isPrivate ? 'from-private to-private-accent shadow-[0_0_15px_rgba(0,191,165,0.4)] border-private/50' : 'from-orange-500 to-orange-600 shadow-[0_0_15px_rgba(249,115,22,0.4)] border-orange-400/50'} flex items-center justify-center overflow-hidden group border`}>
       <motion.div
         animate={{
           y: [0, -2, 0],

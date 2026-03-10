@@ -30,6 +30,7 @@ import {
   PulseIndicator,
   InteractiveIconWrapper,
 } from "@/components/Animations";
+import { useTheme } from "@/components/ThemeContext";
 
 interface UploadingFile {
   id: string;
@@ -139,6 +140,8 @@ export function DashboardLayout({
   const [storageUsed, setStorageUsed] = useState(0);
   const dropRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { theme } = useTheme();
+  const isPrivate = theme === "private";
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { mutate } = useSWRConfig();
@@ -386,22 +389,22 @@ export function DashboardLayout({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="h-[100dvh] w-full bg-transparent text-foreground selection:bg-orange-500/20 selection:text-white font-sans relative flex overflow-hidden lg:h-screen lg:min-h-screen"
+      className={`h-[100dvh] w-full bg-transparent text-foreground ${isPrivate ? 'selection:bg-private/20' : 'selection:bg-orange-500/20'} selection:text-white font-sans relative flex overflow-hidden lg:h-screen lg:min-h-screen`}
     >
       {/* Ambient Glowing Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-[#F97316] rounded-bl-[100px] opacity-10 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-[#EA580C] rounded-tr-[100px] opacity-10 blur-[100px]" />
+        <div className={`absolute top-0 right-0 w-[50%] h-[50%] ${isPrivate ? 'bg-private' : 'bg-[#F97316]'} rounded-bl-[100px] opacity-10 blur-[100px]`} />
+        <div className={`absolute bottom-0 left-0 w-[50%] h-[50%] ${isPrivate ? 'bg-private-accent' : 'bg-[#EA580C]'} rounded-tr-[100px] opacity-10 blur-[100px]`} />
       </div>
 
       {/* Sidebar */}
       <aside className="w-72 bg-[#0A0503]/40 backdrop-blur-3xl border-r border-white/5 flex flex-col relative z-20 hidden xl:flex">
         <div className="p-8">
           <Link href="/main" className="flex items-center gap-3 group">
-            <LivingLogo />
+            <LivingLogo isPrivate={isPrivate} />
             <span className="text-xl font-serif italic tracking-tight lowercase text-white">
               swiftdrop{" "}
-              <span className="text-orange-500 font-sans not-italic text-xs ml-1">
+              <span className={`font-sans not-italic text-xs ml-1 ${isPrivate ? 'text-private' : 'text-orange-500'}`}>
                 v2
               </span>
             </span>
@@ -437,15 +440,15 @@ export function DashboardLayout({
           ].map((item, i) => {
             const isActive = currentFilter === item.filter;
             return (
-              <Link
+                <Link
                 key={i}
                 href={item.href}
-                className={`flex items-center justify-between px-4 py-3 rounded-2xl transition-all group ${isActive ? "bg-white/10 text-white shadow-[0_0_15px_rgba(249,115,22,0.1)] border border-white/10" : "text-[#A0A0A0] hover:text-white hover:bg-white/5"}`}
+                className={`flex items-center justify-between px-4 py-3 rounded-2xl transition-all group ${isActive ? `bg-white/10 text-white ${isPrivate ? 'shadow-[0_0_15px_rgba(0,191,165,0.1)] border-private/30' : 'shadow-[0_0_15px_rgba(249,115,22,0.1)] border-white/10'} border` : "text-[#A0A0A0] hover:text-white hover:bg-white/5"}`}
               >
                 <div className="flex items-center gap-3">
                   <InteractiveIconWrapper>
                     <item.icon
-                      className={`w-4 h-4 ${isActive ? "text-white" : "text-[#666666] group-hover:text-white"}`}
+                      className={`w-4 h-4 ${isActive ? (isPrivate ? "text-private" : "text-white") : "text-[#666666] group-hover:text-white"}`}
                     />
                   </InteractiveIconWrapper>
                   <span
@@ -454,7 +457,7 @@ export function DashboardLayout({
                     {item.label}
                   </span>
                 </div>
-                {isActive && <PulseIndicator />}
+                {isActive && <PulseIndicator color={isPrivate ? "#00BFA5" : "#F97316"} />}
               </Link>
             );
           })}
@@ -464,7 +467,7 @@ export function DashboardLayout({
         <div className="px-6 pb-2">
           <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-orange-500 shrink-0" />
+              <HardDrive className={`w-4 h-4 shrink-0 ${isPrivate ? 'text-private' : 'text-orange-500'}`} />
               <span className="text-xs font-bold text-[#A0A0A0] uppercase tracking-widest">
                 Stockage
               </span>
@@ -480,7 +483,7 @@ export function DashboardLayout({
               </div>
               <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.6)]"
+                  className={`h-full bg-gradient-to-r ${isPrivate ? 'from-private to-private-accent shadow-[0_0_8px_rgba(0,191,165,0.6)]' : 'from-orange-500 to-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.6)]'} rounded-full`}
                   initial={{ width: 0 }}
                   animate={{ width: `${storagePercent}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
@@ -492,7 +495,7 @@ export function DashboardLayout({
 
         <div className="p-6 border-t border-white/5">
           <div className="flex items-center gap-3 p-2 rounded-2xl group transition-all">
-            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-serif italic text-sm border border-orange-500/30">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-serif italic text-sm border ${isPrivate ? 'bg-private/20 text-private border-private/30' : 'bg-orange-500/20 text-orange-500 border-orange-500/30'}`}>
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -520,14 +523,14 @@ export function DashboardLayout({
             <Link
               key={i}
               href={item.href}
-              className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center transition-all relative ${isActive ? "bg-orange-500/20 text-orange-500 scale-110 shadow-[0_0_15px_rgba(249,115,22,0.2)]" : "text-[#666666]"}`}
+              className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center transition-all relative ${isActive ? (isPrivate ? "bg-private/20 text-private scale-110 shadow-[0_0_15px_rgba(0,191,165,0.2)]" : "bg-orange-500/20 text-orange-500 scale-110 shadow-[0_0_15px_rgba(249,115,22,0.2)]") : "text-[#666666]"}`}
             >
               <InteractiveIconWrapper>
                 <item.icon className={`w-5 h-5`} />
               </InteractiveIconWrapper>
               {isActive && (
                 <div className="absolute -top-1 right-0">
-                  <PulseIndicator />
+                  <PulseIndicator color={isPrivate ? "#00BFA5" : "#F97316"} />
                 </div>
               )}
             </Link>
@@ -539,9 +542,9 @@ export function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Global Header */}
         <header className="h-20 xl:h-24 px-8 border-b border-white/5 flex items-center justify-between relative z-10 bg-[#0A0503]/40 backdrop-blur-xl">
-          <div className="flex items-center gap-4 xl:hidden">
+          <div className="flex items-center gap-4 relative">
             <Link href="/main">
-              <LivingLogo />
+              <LivingLogo isPrivate={isPrivate} />
             </Link>
           </div>
 
@@ -561,9 +564,9 @@ export function DashboardLayout({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 px-3 py-1.5 rounded-full border border-white/10 hover:border-orange-500/50 hover:bg-white/5 transition-all group bg-transparent"
+                className={`flex items-center gap-3 px-3 py-1.5 rounded-full border border-white/10 ${isPrivate ? 'hover:border-private/50' : 'hover:border-orange-500/50'} hover:bg-white/5 transition-all group bg-transparent`}
               >
-                <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center font-serif italic text-[10px] text-white">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-serif italic text-[10px] text-white ${isPrivate ? 'bg-private' : 'bg-orange-500'}`}>
                   {initials.substring(0, 1)}
                 </div>
                 <span className="text-xs font-bold text-[#A0A0A0] group-hover:text-white transition-colors">
@@ -583,7 +586,7 @@ export function DashboardLayout({
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
-                    className="absolute right-0 top-12 w-56 bg-[#0A0503]/90 backdrop-blur-xl border border-white/5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(249,115,22,0.2)] overflow-hidden z-50 p-2"
+                    className={`absolute right-0 top-12 w-56 bg-[#0A0503]/90 backdrop-blur-xl border border-white/5 rounded-2xl shadow-[0_10px_40px_-10px_${isPrivate ? 'rgba(0,191,165,0.2)' : 'rgba(249,115,22,0.2)'}] overflow-hidden z-50 p-2`}
                   >
                     <div className="px-4 py-3 border-b border-white/5 mb-2">
                       <p className="text-xs font-bold text-white">{userName}</p>
@@ -627,16 +630,16 @@ export function DashboardLayout({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-orange-600/10 backdrop-blur-md flex items-center justify-center p-12 border-4 border-dashed border-orange-500/40 m-6 rounded-[3rem] pointer-events-none"
+            className={`fixed inset-0 z-[100] ${isPrivate ? 'bg-private/10 border-private/40' : 'bg-orange-600/10 border-orange-500/40'} backdrop-blur-md flex items-center justify-center p-12 border-4 border-dashed m-6 rounded-[3rem] pointer-events-none`}
           >
             <div className="flex flex-col items-center gap-6">
-              <div className="w-24 h-24 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 animate-bounce">
+              <div className={`w-24 h-24 rounded-full ${isPrivate ? 'bg-private/20 text-private' : 'bg-orange-500/20 text-orange-400'} flex items-center justify-center animate-bounce`}>
                 <FolderOpen className="w-12 h-12" />
               </div>
-              <h2 className="text-4xl font-black font-outfit uppercase tracking-tighter text-white drop-shadow-[0_0_20px_rgba(249,115,22,0.5)]">
+              <h2 className={`text-4xl font-black font-outfit uppercase tracking-tighter text-white drop-shadow-[0_0_20px_${isPrivate ? 'rgba(0,191,165,0.5)' : 'rgba(249,115,22,0.5)'}]`}>
                 Lâchez ici
               </h2>
-              <p className="text-orange-300/70 text-sm font-bold tracking-widest uppercase">
+              <p className={`${isPrivate ? 'text-private/70' : 'text-orange-300/70'} text-sm font-bold tracking-widest uppercase`}>
                 Fichiers ou dossiers acceptés
               </p>
             </div>
@@ -661,7 +664,7 @@ export function DashboardLayout({
                     ? "bg-green-500/10 text-green-400"
                     : upload.status === "error"
                       ? "bg-red-500/10 text-red-400"
-                      : "bg-orange-500/10 text-orange-400"
+                      : isPrivate ? "bg-private/10 text-private" : "bg-orange-500/10 text-orange-400"
                 }`}
               >
                 {upload.status === "uploading" ? (
@@ -680,7 +683,7 @@ export function DashboardLayout({
                 <p className="text-xs font-bold truncate pr-4">{upload.name}</p>
                 <div className="h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                   <motion.div
-                    className={`h-full ${upload.status === "error" ? "bg-red-500" : "bg-orange-500 shadow-[0_0_10px_#ea580c]"}`}
+                    className={`h-full ${upload.status === "error" ? "bg-red-500" : (isPrivate ? "bg-private shadow-[0_0_10px_#00BFA5]" : "bg-orange-500 shadow-[0_0_10px_#ea580c]")}`}
                     initial={{ width: 0 }}
                     animate={{ width: `${upload.progress}%` }}
                   />

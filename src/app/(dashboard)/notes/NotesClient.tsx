@@ -27,6 +27,7 @@ import {
   AnimatedEmptyState,
   AnimatedSearchLoupe,
 } from "@/components/Animations";
+import { useTheme } from "@/components/ThemeContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { preload } from "swr";
@@ -66,6 +67,12 @@ export function NotesClient({
   const notes = data?.notes || [];
   const [activeTab, setActiveTab] = useState<"link" | "doc">("link");
   const [activeSpace, setActiveSpace] = useState<"common" | "private">("common");
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme(activeSpace === "private" ? "private" : "default");
+  }, [activeSpace, setTheme]);
+
   const [searchQuery, setSearchQuery] = useState("");
 
   // Create Modal state
@@ -333,12 +340,13 @@ export function NotesClient({
       <div className="flex-1 overflow-y-auto custom-scrollbar -mx-4 px-4 md:-mx-0 md:px-0">
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
-            <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+            <Loader2 className={`w-8 h-8 ${activeSpace === 'private' ? 'text-private' : 'text-orange-500'} animate-spin`} />
           </div>
         ) : filteredNotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 opacity-50 mt-10">
             <AnimatedEmptyState
               type={activeTab === "link" ? "folder" : "activity"}
+              isPrivate={activeSpace === "private"}
             />
             <p className="text-sm font-bold mt-4 text-[#A0A0A0]">
               Aucun élément trouvé.

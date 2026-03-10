@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { RENDER_BACKEND_URL } from "@/lib/constants";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@/components/ThemeContext";
 
 export function CreateModal({ 
     type, 
@@ -25,6 +26,8 @@ export function CreateModal({
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { theme } = useTheme();
+    const isPrivate = theme === "private";
 
     if (!isOpen) return null;
 
@@ -74,11 +77,14 @@ export function CreateModal({
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="w-full max-w-md bg-[#0A0503]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 relative z-10 shadow-[0_20px_60px_-15px_rgba(0,191,165,0.2)]"
+                    className={`w-full max-w-md bg-[#0A0503]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 relative z-10 shadow-[0_20px_60px_-15px_${isPrivate ? 'rgba(0,191,165,0.2)' : 'rgba(249,115,22,0.2)'}]`}
                 >
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-private/10 border border-private/20 flex items-center justify-center text-private shadow-[0_0_15px_rgba(0,191,165,0.2)]">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-[0_0_15px_rgba(0,0,0,0.2)] 
+                              ${isPrivate 
+                                ? 'bg-private/10 border-private/20 text-private shadow-private/20' 
+                                : 'bg-orange-500/10 border-orange-500/20 text-orange-500 shadow-orange-500/20'}`}>
                                 {type === "space" ? <LayoutGrid className="w-6 h-6" /> : <Folder className="w-6 h-6" />}
                             </div>
                             <h2 className="text-2xl font-serif italic tracking-tight text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">Nouveau {type === "space" ? "Espace" : "Dossier"}</h2>
@@ -96,14 +102,20 @@ export function CreateModal({
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder={type === "space" ? "Mon Espace Perso" : "Mes Documents"}
-                                className="w-full bg-[#0A0503]/50 backdrop-blur-xl border border-white/10 rounded-2xl py-5 px-6 text-white placeholder:text-[#666666] focus:outline-none focus:border-private focus:ring-1 focus:ring-private/20 transition-all font-medium focus:shadow-[0_0_20px_rgba(0,191,165,0.1)]"
+                                className={`w-full bg-[#0A0503]/50 backdrop-blur-xl border border-white/10 rounded-2xl py-5 px-6 text-white placeholder:text-[#666666] focus:outline-none transition-all font-medium 
+                                  ${isPrivate 
+                                    ? 'focus:border-private focus:ring-1 focus:ring-private/20 focus:shadow-[0_0_20px_rgba(0,191,165,0.1)]' 
+                                    : 'focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 focus:shadow-[0_0_20px_rgba(249,115,22,0.1)]'}`}
                                 required
                             />
                         </div>
 
                         <button 
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-private to-private-accent text-white font-bold py-5 rounded-full hover:scale-[1.02] transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 shadow-[0_4px_20px_rgba(0,191,165,0.3)]"
+                            className={`w-full text-white font-bold py-5 rounded-full hover:scale-[1.02] transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 
+                              ${isPrivate 
+                                ? 'bg-gradient-to-r from-private to-private-accent shadow-[0_4px_20px_rgba(0,191,165,0.3)]' 
+                                : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_20px_rgba(249,115,22,0.3)]'}`}
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer l'élément"}
                             {!loading && <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />}

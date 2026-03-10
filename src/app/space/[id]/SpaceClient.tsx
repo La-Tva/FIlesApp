@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import {
   Folder,
@@ -22,6 +22,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreateModal } from "@/components/CreateModal";
+import { useTheme } from "@/components/ThemeContext";
 import { RENDER_BACKEND_URL } from "@/lib/constants";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,6 +81,12 @@ export function SpaceClient({
   isGlobal?: boolean;
   folderPath?: { id: string; name: string }[];
 }) {
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme(isGlobal ? "default" : "private");
+  }, [isGlobal, setTheme]);
+
   // SWR key — changes when navigating into sub-folders
   const swrKey = `/api/spaces/${spaceId}/contents${folderId ? `?folderId=${folderId}` : ""}`;
   const { data, mutate } = useSWR(swrKey, fetcher, {

@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import useSWR from "swr";
 
 import { AnimatedEmptyState, FileCorner, FolderTab, InteractiveIconWrapper } from "@/components/Animations";
+import { useTheme } from "@/components/ThemeContext";
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -54,6 +55,12 @@ export function DashboardClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "favorites" | "recents">(initialFilter || "all");
   const router = useRouter();
+
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme("default");
+  }, [setTheme]);
 
   useEffect(() => {
     if (initialFilter) {
