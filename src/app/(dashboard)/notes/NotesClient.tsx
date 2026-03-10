@@ -12,6 +12,13 @@ import {
   MoreVertical,
   Edit2,
   X,
+  Globe,
+  Lock,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  Type,
 } from "lucide-react";
 import { RENDER_BACKEND_URL } from "@/lib/constants";
 import useSWR from "swr";
@@ -34,6 +41,7 @@ interface Note {
   label: string;
   content: string;
   createdAt: string;
+  isPrivate?: boolean;
   preview?: {
     title?: string;
     description?: string;
@@ -51,24 +59,27 @@ export function NotesClient({
   userName: string;
 }) {
   const { data, isLoading, mutate } = useSWR(
-    `${RENDER_BACKEND_URL}/api/notes`,
+    `${RENDER_BACKEND_URL}/api/notes?userId=${userId}`,
     fetcher,
     { revalidateOnFocus: true, revalidateOnMount: true },
   );
   const notes = data?.notes || [];
   const [activeTab, setActiveTab] = useState<"link" | "doc">("link");
+  const [activeSpace, setActiveSpace] = useState<"common" | "private">("common");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Create Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newContent, setNewContent] = useState("");
+  const [isNewPrivate, setIsNewPrivate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit Modal & Fullscreen Editor state
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [isEditPrivate, setIsEditPrivate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Action Menu state
@@ -124,6 +135,7 @@ export function NotesClient({
           type: activeTab,
           label: newLabel,
           content: newContent,
+          isPrivate: isNewPrivate,
         }),
       });
 
@@ -147,6 +159,7 @@ export function NotesClient({
     setEditingNote(note);
     setEditLabel(note.label);
     setEditContent(note.content);
+    setIsEditPrivate(!!note.isPrivate);
     setOpenMenuId(null);
   };
 
@@ -159,6 +172,7 @@ export function NotesClient({
       ...editingNote,
       label: editLabel,
       content: editContent,
+      isPrivate: isEditPrivate,
     };
     const newNotes = notes.map((n: Note) =>
       n._id === editingNote._id ? updatedNote : n,
@@ -175,6 +189,7 @@ export function NotesClient({
             label: editLabel,
             content: editContent,
             type: editingNote.type,
+            isPrivate: isEditPrivate,
           }),
         },
       );
@@ -210,9 +225,35 @@ export function NotesClient({
   const filteredNotes = notes.filter(
     (n: Note) =>
       n.type === activeTab &&
+      (activeSpace === "private" ? n.isPrivate === true : n.isPrivate !== true) &&
       (n.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
         n.content.toLowerCase().includes(searchQuery.toLowerCase())),
   );
+
+  const insertMarkdown = (tag: string) => {
+    const textarea = document.getElementById("editor-textarea") as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    let replacement = "";
+    if (tag === "bold") replacement = `**${selectedText}**`;
+    else if (tag === "italic") replacement = `*${selectedText}*`;
+    else if (tag === "underline") replacement = `<u>${selectedText}</u>`;
+    else if (tag === "list") replacement = `\n- ${selectedText}`;
+    
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    setEditContent(newValue);
+    
+    // Reset focus and selection
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 2, end + 2);
+    }, 0);
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#0A0503]/40 backdrop-blur-xl border border-white/5 rounded-[2rem] md:rounded-3xl overflow-hidden text-white p-4 md:p-6 relative">
@@ -223,8 +264,9 @@ export function NotesClient({
             Notes & Liens
           </h1>
           <p className="text-[#A0A0A0] text-xs md:text-sm hidden md:block">
-            Votre espace de travail pour sauvegarder vos liens et rédiger des
-            documents.
+            {activeSpace === "common" 
+              ? "Espace partagé avec tous les utilisateurs." 
+              : "Votre espace personnel et sécurisé."}
           </p>
         </div>
 
@@ -243,6 +285,7 @@ export function NotesClient({
             onClick={() => {
               setNewLabel("");
               setNewContent("");
+              setIsNewPrivate(activeSpace === "private");
               setIsModalOpen(true);
             }}
             className="flex flex-shrink-0 items-center gap-2 px-5 md:px-6 py-2.5 md:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full text-xs font-bold hover:scale-105 transition-all shadow-[0_4px_20px_rgba(249,115,22,0.3)]"
@@ -267,6 +310,23 @@ export function NotesClient({
         >
           <FileText className="w-4 h-4" /> Documents
         </button>
+
+        <div className="flex-1" />
+
+        <div className="flex items-center bg-black/40 rounded-xl p-1 mb-1 border border-white/5">
+          <button
+            onClick={() => setActiveSpace("common")}
+            className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all flex items-center gap-1.5 ${activeSpace === "common" ? "bg-orange-500 text-white shadow-lg" : "text-[#A0A0A0] hover:text-white"}`}
+          >
+            <Globe className="w-3 h-3" /> Commun
+          </button>
+          <button
+            onClick={() => setActiveSpace("private")}
+            className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all flex items-center gap-1.5 ${activeSpace === "private" ? "bg-orange-500 text-white shadow-lg" : "text-[#A0A0A0] hover:text-white"}`}
+          >
+            <Lock className="w-3 h-3" /> Privé
+          </button>
+        </div>
       </div>
 
       {/* 🔴 Content Grid - Maximized height */}
@@ -476,6 +536,20 @@ export function NotesClient({
                     />
                   )}
                 </div>
+                
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                  <input
+                    type="checkbox"
+                    id="isPrivate"
+                    checked={isNewPrivate}
+                    onChange={(e) => setIsNewPrivate(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <label htmlFor="isPrivate" className="text-sm font-medium text-white flex items-center gap-2 cursor-pointer">
+                    {isNewPrivate ? <Lock className="w-3.5 h-3.5 text-orange-500" /> : <Globe className="w-3.5 h-3.5 text-[#A0A0A0]" />}
+                    Rendre ce contenu privé
+                  </label>
+                </div>
                 <div className="flex items-center justify-end gap-3 mt-8">
                   <button
                     type="button"
@@ -556,6 +630,19 @@ export function NotesClient({
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
                       />
                     </div>
+                    <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                      <input
+                        type="checkbox"
+                        id="editIsPrivate"
+                        checked={isEditPrivate}
+                        onChange={(e) => setIsEditPrivate(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <label htmlFor="editIsPrivate" className="text-sm font-medium text-white flex items-center gap-2 cursor-pointer">
+                        {isEditPrivate ? <Lock className="w-3.5 h-3.5 text-orange-500" /> : <Globe className="w-3.5 h-3.5 text-[#A0A0A0]" />}
+                        Contenu privé
+                      </label>
+                    </div>
                     <div className="flex justify-end gap-3 mt-8">
                       <button
                         onClick={() => setEditingNote(null)}
@@ -610,7 +697,8 @@ export function NotesClient({
                         disabled={
                           isUpdating ||
                           (editLabel === editingNote.label &&
-                            editContent === editingNote.content)
+                            editContent === editingNote.content &&
+                            isEditPrivate === editingNote.isPrivate)
                         }
                         className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-[0_0_15px_rgba(249,115,22,0.4)]"
                       >
@@ -623,9 +711,40 @@ export function NotesClient({
                     </div>
                   </div>
 
-                  {/* Editor Body */}
+                  {/* Markdown Toolbar */}
+                  <div className="flex items-center gap-1 p-2 border-b border-white/5 bg-[#0D0705] shrink-0 overflow-x-auto no-scrollbar">
+                    <button onClick={() => insertMarkdown("bold")} className="p-2 hover:bg-white/10 rounded-lg text-[#A0A0A0] hover:text-white transition-colors" title="Gras">
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => insertMarkdown("italic")} className="p-2 hover:bg-white/10 rounded-lg text-[#A0A0A0] hover:text-white transition-colors" title="Italique">
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => insertMarkdown("underline")} className="p-2 hover:bg-white/10 rounded-lg text-[#A0A0A0] hover:text-white transition-colors" title="Souligné">
+                      <Underline className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-white/10 mx-1" />
+                    <button onClick={() => insertMarkdown("list")} className="p-2 hover:bg-white/10 rounded-lg text-[#A0A0A0] hover:text-white transition-colors" title="Liste à puces">
+                      <List className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-white/10 mx-1" />
+                    <div className="flex items-center gap-2 px-3 py-1 bg-black/30 rounded-lg border border-white/5 ml-auto">
+                      <input
+                        type="checkbox"
+                        id="editorIsPrivate"
+                        checked={isEditPrivate}
+                        onChange={(e) => setIsEditPrivate(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <label htmlFor="editorIsPrivate" className="text-[10px] font-bold text-[#A0A0A0] flex items-center gap-1 cursor-pointer">
+                        {isEditPrivate ? <Lock className="w-3 h-3 text-orange-500" /> : <Globe className="w-3 h-3" />}
+                        Privé
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="flex-1 min-h-0 w-full bg-[#110A07] overflow-y-auto custom-scrollbar flex justify-center p-4 md:p-8">
                     <textarea
+                      id="editor-textarea"
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
                       placeholder="Identifiez vos idées ici..."

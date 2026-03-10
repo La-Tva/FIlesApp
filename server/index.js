@@ -595,9 +595,17 @@ app.get("/api/folders/:folderId/download", async (req, res) => {
 // Notes API
 app.get("/api/notes", async (req, res) => {
   try {
+    const { userId } = req.query;
+    const query = {
+      $or: [
+        { isPrivate: { $ne: true } },
+        { ownerId: userId ? new ObjectId(userId) : null },
+      ],
+    };
+
     const notes = await db
       .collection("notes")
-      .find({})
+      .find(query)
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -609,7 +617,7 @@ app.get("/api/notes", async (req, res) => {
 
 app.post("/api/notes", async (req, res) => {
   try {
-    const { ownerId, type, label, content } = req.body;
+    const { ownerId, type, label, content, isPrivate } = req.body;
     if (!ownerId || !type || !label)
       return res.status(400).json({ error: "Missing required fields" });
 
@@ -630,6 +638,7 @@ app.post("/api/notes", async (req, res) => {
       type,
       label,
       content,
+      isPrivate: !!isPrivate,
       preview,
       createdAt: new Date(),
     };
@@ -641,7 +650,7 @@ app.post("/api/notes", async (req, res) => {
       ...newNote,
       _id: result.insertedId,
       senderName: user?.name || "Un utilisateur",
-      isGlobal: true // Notes are effectively global/shared in the current UI logic
+      isGlobal: !isPrivate // Shared if not private
     });
 
     res.json({ note: { ...newNote, _id: result.insertedId } });
@@ -653,7 +662,7 @@ app.post("/api/notes", async (req, res) => {
 app.put("/api/notes/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { label, content, type } = req.body;
+    const { label, content, type, isPrivate } = req.body;
 
     if (!label || !content)
       return res.status(400).json({ error: "Missing required fields" });
@@ -672,6 +681,7 @@ app.put("/api/notes/:id", async (req, res) => {
     }
 
     const updateFields = { label, content };
+    if (isPrivate !== undefined) updateFields.isPrivate = !!isPrivate;
     if (preview !== undefined) updateFields.preview = preview;
 
     const result = await db
@@ -705,7 +715,7 @@ app.delete("/api/notes/:id", async (req, res) => {
       id, 
       label,
       senderName,
-      isGlobal: true 
+      isGlobal: !note?.isPrivate 
     });
     
     res.json({ success: true });
